@@ -34,7 +34,7 @@ class Neural_Network(object):
         self.biases.append(layer_biases)
 
 
-  def forward_propogate(self, input):
+def forward_propogate(self, input):
     if len(input) is not self.input_size:
         raise ParameterError('input does not match input size')
 
@@ -60,6 +60,14 @@ class Neural_Network(object):
 
 
     return self.layers[len(self.layers) - 1]
+
+#steps to backpropagate
+#calculate the expected output values and stored them in an array, expected
+#for each output neuron, calculate self.layers[i] - expected[i] and store it in an array called y
+#calculate cost = sum over all i of (self.layers[i]-y[i])^2
+#calculate sum over all i of layers_unsquashed[i] and store it in an array called z
+#calculate sigmoid_prime(z)
+    
 
 def main():
     '''debugging code for Neural_Network constructor'''
