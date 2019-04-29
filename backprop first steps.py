@@ -5,6 +5,9 @@ Created on Fri Apr 26 00:01:54 2019
 @author: pingo
 """
 
+from abc import ABC
+import numpy as np
+
 class Module(ABC):
     def __init__(self, numUnits, weightList, inputs, activations, beta, lam):
         self.weightMatrix = np.zeros([numUnits,numUnits])
