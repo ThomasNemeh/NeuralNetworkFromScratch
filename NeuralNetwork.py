@@ -63,14 +63,17 @@ def forward_propogate(self, input):
 
 #steps for backpropagation
 #do the following for each training example:
-#make 2d arrays for dc/da, da/dz, and dw/da
-#calculate the expected output values and stored them in an array, expected
-#loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
-#loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
-#loop through the last layer of weights and store the activation of the neuron that feeds into the connection in dz/dw
-#calculate the derivative of the cost wrt each weight, which is dc/da * da/dz * dz/dw. Store this in dc/dw
-#calculate the derivative of the cost wrt each bias, which is dc/da * da/dz * 1. Store this in dc/db
-
+#1. make 2d arrays for dc/da, da/dz, and dw/da
+#2. calculate the expected output values and stored them in an array, expected
+#3. loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
+#4. loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
+#5. loop through the last layer of weights and store the activation of the neuron that feeds into the connection in dz/dw
+#6. calculate the derivative of the cost wrt each weight, which is dc/da * da/dz * dz/dw. Store this in dc/dw
+#7. calculate the derivative of the cost wrt each bias, which is dc/da * da/dz * 1. Store this in dc/db
+#8. for each neuron in layer L-1, loop through all neurons in layer L and calculate dc/da(L) * da(L)/dz * dz/da(L-1). Sum these values and store them in the next layer of dc/da.
+#9. Repeat steps 3-8 until you get to the bottom layer.
+#Then sum the resulting dc/dw and dc/db values for each weight and bias.
+#apply gradient descent using these values
 
 def main():
     '''debugging code for Neural_Network constructor'''
