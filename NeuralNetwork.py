@@ -62,7 +62,8 @@ def forward_propogate(self, input):
     return self.layers[len(self.layers) - 1]
 
 #steps for backpropagation
-#do the following for each training example:
+#Divide the training examples into batches
+#do the following for each training example in one batch:
 #1. make 2d arrays for dc/da, da/dz, and dw/da
 #2. calculate the expected output values and stored them in an array, expected
 #3. loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
@@ -73,7 +74,9 @@ def forward_propogate(self, input):
 #8. for each neuron in layer L-1, loop through all neurons in layer L and calculate dc/da(L) * da(L)/dz * dz/da(L-1). Sum these values and store them in the next layer of dc/da.
 #9. Repeat steps 3-8 until you get to the bottom layer.
 #Then sum the resulting dc/dw and dc/db values for each weight and bias.
-#apply gradient descent using these values
+#Define a constant c to use with gradient descent
+#Add c*dc/dw to each weight and c*dc/db for each bias
+#Repeat this whole process for each batch of training examples
 
 def main():
     '''debugging code for Neural_Network constructor'''
