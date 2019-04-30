@@ -42,7 +42,7 @@ def forward_propogate(self, input):
     self.layers_unsquashed.append(input)
     last_layer = input
 
-    #should I maitain values before applying sigmoidal squishification?
+    #should I maintain values before applying sigmoidal squishification?
     #Yes. This is necessary to compute dz/da
     for i in range(1, self.num_layers):
         #matrix multiplication
@@ -61,13 +61,16 @@ def forward_propogate(self, input):
 
     return self.layers[len(self.layers) - 1]
 
-#steps to backpropagate
+#steps for backpropagation
+#do the following for each training example:
+#make 2d arrays for dc/da, da/dz, and dw/da
 #calculate the expected output values and stored them in an array, expected
-#for each output neuron, calculate self.layers[i] - expected[i] and store it in an array called y
-#calculate cost = sum over all i of (self.layers[i]-y[i])^2
-#calculate sum over all i of layers_unsquashed[i] and store it in an array called z
-#calculate sigmoid_prime(z)
-    
+#loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
+#loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
+#loop through the last layer of weights and store the activation of the neuron that feeds into the connection in dz/dw
+#calculate the derivative of the cost wrt each weight, which is dc/da * da/dz * dz/dw. Store this in dc/dw
+#calculate the derivative of the cost wrt each bias, which is dc/da * da/dz * 1. Store this in dc/db
+
 
 def main():
     '''debugging code for Neural_Network constructor'''
