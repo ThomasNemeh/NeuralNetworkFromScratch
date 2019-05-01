@@ -11,60 +11,60 @@ def sigmoid_prime(self, input, lam, beta):
 
 '''Class to created neural network with one hidden layer'''
 class Neural_Network(object):
-  def __init__(self, layer_sizes):
-    self.weights = []
-    self.biases = []
-    self.layers = []
-    self.layers_unsquashed = []
-    self.num_layers = len(layer_sizes)
-    self.input_size = layer_sizes[0]
-    last_size = layer_sizes[0]
-
-    #generate weight matricies with random values from normal distribution
-    for i in range(1, len(layer_sizes)):
-        self.weights.append(np.random.randn(last_size, layer_sizes[i]))
-        last_size = layer_sizes[i]
-
-    #generate biases for each neuron with random values from normal distribution
-    for i in range(self.num_layers):
-        layer_biases = []
-        for j in range(layer_sizes[i]):
-            b = np.random.normal(0, 1)
-            layer_biases.append(b)
-        self.biases.append(layer_biases)
-
-
-def forward_propogate(self, input):
-    if len(input) is not self.input_size:
-        raise ParameterError('input does not match input size')
-
-    self.layers.append(input)
-    self.layers_unsquashed.append(input)
-    last_layer = input
-
-    #should I maintain values before applying sigmoidal squishification?
-    #Yes. This is necessary to compute dz/da
-    for i in range(1, self.num_layers):
-        #matrix multiplication
-        self.layers_unsquashed.append(np.dot(last_layer, self.weights[i - 1]))
-
-        #add biases
-        for j in range(len(self.layers_unsquashed[i])):
-            self.layers_unsquashed[i][j] = self.layers_unsquashed[i][j] + self.biases[i][j]
-
-        #apply sigmoidal squishification
-        self.layers.append([])
-        self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
-
-        last_layer = self.layers[i]
+    def __init__(self, layer_sizes):
+        self.weights = []
+        self.biases = []
+        self.layers = []
+        self.layers_unsquashed = []
+        self.num_layers = len(layer_sizes)
+        self.input_size = layer_sizes[0]
+        last_size = layer_sizes[0]
+    
+        #generate weight matricies with random values from normal distribution
+        for i in range(1, len(layer_sizes)):
+            self.weights.append(np.random.randn(last_size, layer_sizes[i]))
+            last_size = layer_sizes[i]
+    
+        #generate biases for each neuron with random values from normal distribution
+        for i in range(self.num_layers):
+            layer_biases = []
+            for j in range(layer_sizes[i]):
+                b = np.random.normal(0, 1)
+                layer_biases.append(b)
+            self.biases.append(layer_biases)
 
 
-    return self.layers[len(self.layers) - 1]
+    def forward_propogate(self, input):
+        if len(input) is not self.input_size:
+            raise ParameterError('input does not match input size')
+    
+        self.layers.append(input)
+        self.layers_unsquashed.append(input)
+        last_layer = input
+    
+        #should I maintain values before applying sigmoidal squishification?
+        #Yes. This is necessary to compute dz/da
+        for i in range(1, self.num_layers):
+            #matrix multiplication
+            self.layers_unsquashed.append(np.dot(last_layer, self.weights[i - 1]))
+    
+            #add biases
+            for j in range(len(self.layers_unsquashed[i])):
+                self.layers_unsquashed[i][j] = self.layers_unsquashed[i][j] + self.biases[i][j]
+    
+            #apply sigmoidal squishification
+            self.layers.append([])
+            self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
+    
+            last_layer = self.layers[i]
+    
+    
+        return self.layers[len(self.layers) - 1]
 
 #steps for backpropagation
 #Divide the training examples into batches
 #do the following for each training example in one batch:
-#1. make 2d arrays for dc/da, da/dz, and dw/da
+#1. make 2d arrays for dc/da, da/dz, and dz/dw
 #2. calculate the expected output values and stored them in an array, expected
 #3. loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
 #4. loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
@@ -77,13 +77,32 @@ def forward_propogate(self, input):
 #Define a constant c to use with gradient descent
 #Add c*dc/dw to each weight and c*dc/db for each bias
 #Repeat this whole process for each batch of training examples
+    
+    def back_propagate(self, inputArray, expected):
+        #only 1 training batch for now
+        DcDa = [[]]        #step 1
+        DaDz = [[]]
+        DzDw = [] #not sure if this should be a 3d array
+        for i in range(self.num_layers-1):
+            DcDa.append([])
+            DaDz.append([])
+            DzDw.append([])
+        for l in range(self.num_layers):
+            lenLayer = len(self.layers[l])
+            for i in range(lenLayer): #step 3
+                DcDa[l][i] = 2(self.layers[l][i]-expected[i])
+            for i in range(lenLayer): #step 4
+                DaDz = sigmoid_prime(self.layers_unsquashed[l][i])
+            for j in range(len(self.weights[l-1])): #step 5
+                for k in range(len(self.weights[l-1][j])):
+                    DzDw[l-1][j] = self.layers[l-1][k]
 
 def main():
     '''debugging code for Neural_Network constructor'''
     network = Neural_Network([3, 5, 1])
     
-    inputList = [1,3.5,7.7,2.6,3,9.4] #train the network to add 5 to a number
-    expected = [6,8.5,12.7,7.6,8,14.4]
+    inputList = np.asarray([1,3.5,7.7,2.6,3,9.4]) #train the network to add 5 to a number
+    expected = np.asarray([6,8.5,12.7,7.6,8,14.4])
 
     #print weights matricies
     print('Weights:')
@@ -102,6 +121,8 @@ def main():
 
     '''debugging code for forward propogation'''
     x = network.forward_propogate([0, .5, 1])
+    #network.forward_propogate(inputList)
+    #network.back_propagate(inputList,expected)
 
     print('Layers:')
     for layer in network.layers:
