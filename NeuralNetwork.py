@@ -81,6 +81,9 @@ def forward_propogate(self, input):
 def main():
     '''debugging code for Neural_Network constructor'''
     network = Neural_Network([3, 5, 1])
+    
+    inputList = [1,3.5,7.7,2.6,3,9.4] #train the network to add 5 to a number
+    expected = [6,8.5,12.7,7.6,8,14.4]
 
     #print weights matricies
     print('Weights:')
