@@ -9,6 +9,7 @@ def sigmoid(x, lam, beta):
 def sigmoid_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
 
+#does ordering of actual and expected matter?
 def cost(actual, expected):
     return (actual - expected) ** 2
 
@@ -71,40 +72,39 @@ class Neural_Network(object):
 #Divide the training examples into batches
 #do the following for each training example in one batch:
 #1. make 2d arrays for dc/da, da/dz, and dz/dw
-#2. calculate the expected output values and stored them in an array, expected
-#3. loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
-#4. loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
-#5. loop through the last layer of weights and store the activation of the neuron that feeds into the connection in dz/dw
-#6. calculate the derivative of the cost wrt each weight, which is dc/da * da/dz * dz/dw. Store this in dc/dw
-#7. calculate the derivative of the cost wrt each bias, which is dc/da * da/dz * 1. Store this in dc/db
-#8. for each neuron in layer L-1, loop through all neurons in layer L and calculate dc/da(L) * da(L)/dz * dz/da(L-1). Sum these values and store them in the next layer of dc/da.
-#9. Repeat steps 3-8 until you get to the bottom layer.
+#2. loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
+#3. loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
+#4. loop through the last layer of weights and store the activation of the neuron that feeds into the connection in dz/dw
+#5. calculate the derivative of the cost wrt each weight, which is dc/da * da/dz * dz/dw. Store this in dc/dw
+#6. calculate the derivative of the cost wrt each bias, which is dc/da * da/dz * 1. Store this in dc/db
+#7. for each neuron in layer L-1, loop through all neurons in layer L and calculate dc/da(L) * da(L)/dz * dz/da(L-1). Sum these values and store them in the next layer of dc/da.
+#8. Repeat steps 3-7 until you get to the bottom layer.
 #Then sum the resulting dc/dw and dc/db values for each weight and bias.
 #Define a constant c to use with gradient descent
 #Add c*dc/dw to each weight and c*dc/db for each bias
 #Repeat this whole process for each batch of training examples
 
-    def back_propagate(self, inputArray, expected):
+    def back_propagate(self, inputArray, expected, DcDw, DcDb):
         #only 1 training batch for now
-        DcDa = [[]]        #step 1
-        DaDz = [[]]
-        DzDw = []
-        for l in range(self.num_layers-1): #subtracting one because there are num_layers-1 layers of weights
-            DcDa.append([])
-            DaDz.append([])
-            DzDw.append([])
-            for i in range(len(self.layers[l])):
-                DzDw[l].append([])
-        for l in range(self.num_layers):
+        DcDa = []        #step 1
+        
+        lastLayer = self.layers[self.num_layers-1]
+        for i in range(len(lastLayer)): #step 2
+            DcDa[i] = cost_prime(lastLayer[i],expected[i])
+            
+        for l in range(self.num_layers-1):
+            layerNum = self.num_layers - l
             lenLayer = len(self.layers[l])
             for i in range(lenLayer): #step 3
-                DcDa[l].append(2*(self.layers[l][i]-expected[i]))
-            for i in range(lenLayer): #step 4
-                DaDz[l].append(sigmoid_prime(self.layers_unsquashed[l][i],4,0.5))
-            if l != 0:
-                for j in range(len(self.weights[l-1])): #step 5
-                    for k in range(len(self.weights[l-1][j])):
-                        DzDw[l-1][j].append(self.layers[l-1][k])
+                 DaDz_neuron = sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5)
+                 DcDa_neuron = DcDa[i] 
+                 for k in range(len(self.weights[layerNum-1][i])):
+                     DzDw_weight = self.layers[layerNum-1][k] #step 4
+                     DcDw[layerNum-1][i][k] += DaDz_neuron * DcDa_neuron * DzDw_weight #step 5
+                     DcDb[layerNum-1][i][k] += DaDz_neuron * DcDa_neuron #step 6
+            for k in range(len(self.layers[layerNum-1])):
+                for i in range(lenLayer):
+                    pass #calculate dc/da(L-1)
         print("DcDa:")
         print(DcDa)
         print("DaDz:")
@@ -123,11 +123,7 @@ class Neural_Network(object):
             for w in range(len(self.weights[l])):
                # dcda = DcDa[l+1][]
                 pass #calculate DcDw
-                DaDz = sigmoid_prime(self.layers_unsquashed[l][i])
-            for j in range(len(self.weights[l-1])):
-                for k in range(len(self.weights[l-1][j])):
-                    DzDw[l-1][j] = self.layers[l-1][k]
-
+                
     def train(self, training_samples, learning_rate):
         #list of lists, one for each layer. We will maintain a running average
         DaDz = []
@@ -137,6 +133,11 @@ class Neural_Network(object):
         for num_neurons in self.biases:
             DaDz.append([0] * num_neurons)
             DzDw.append([0] * num_neurons)
+            
+       # for training samples:
+        #    back_propogation(..., DaDz, DzDw)
+            
+        
 
 
 
@@ -147,7 +148,6 @@ def main():
     
     inputList = np.asarray([1,3,7,2,14,9]) #answer is mod 5 the sum of the input
     expected = np.asarray([0,1,0,0,0,0])
-    network = Neural_Network([3, 5, 1])
 
     inputList = np.asarray([1,3.5,7.7,2.6,3,9.4]) #train the network to add 5 to a number
     expected = np.asarray([6,8.5,12.7,7.6,8,14.4])
