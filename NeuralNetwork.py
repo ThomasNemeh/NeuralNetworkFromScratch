@@ -6,7 +6,7 @@ class ParameterError(Exception):
 def sigmoid(x, lam, beta):
     return 1.0/(1+ np.exp(-1 * lam * (x - beta)))
 
-def sigmoid_prime(self, input, lam, beta):
+def sigmoid_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
 
 '''Class to created neural network with one hidden layer'''
@@ -82,27 +82,50 @@ class Neural_Network(object):
         #only 1 training batch for now
         DcDa = [[]]        #step 1
         DaDz = [[]]
-        DzDw = [] #not sure if this should be a 3d array
-        for i in range(self.num_layers-1):
+        DzDw = []
+        for l in range(self.num_layers-1): #subtracting one because there are num_layers-1 layers of weights
             DcDa.append([])
             DaDz.append([])
             DzDw.append([])
+            for i in range(len(self.layers[l])):
+                DzDw[l].append([])
         for l in range(self.num_layers):
             lenLayer = len(self.layers[l])
             for i in range(lenLayer): #step 3
-                DcDa[l][i] = 2(self.layers[l][i]-expected[i])
+                DcDa[l].append(2*(self.layers[l][i]-expected[i]))
             for i in range(lenLayer): #step 4
-                DaDz = sigmoid_prime(self.layers_unsquashed[l][i])
-            for j in range(len(self.weights[l-1])): #step 5
-                for k in range(len(self.weights[l-1][j])):
-                    DzDw[l-1][j] = self.layers[l-1][k]
+                DaDz[l].append(sigmoid_prime(self.layers_unsquashed[l][i],4,0.5))
+            if l != 0:
+                for j in range(len(self.weights[l-1])): #step 5
+                    for k in range(len(self.weights[l-1][j])):
+                        DzDw[l-1][j].append(self.layers[l-1][k])
+        print("DcDa:")
+        print(DcDa)
+        print("DaDz:")
+        print(DaDz)
+        print("DzDw:")
+        print(DzDw)
+        
+        DcDw = []
+        
+        for l in range(self.num_layers-1):
+            DcDw.append([])
+            for i in range(len(self.layers[l])):
+                DcDw.append([])
+        
+        for l in range(self.num_layers-1):
+            for w in range(len(self.weights[l])):
+               # dcda = DcDa[l+1][]
+                pass #calculate DcDw
+
 
 def main():
     '''debugging code for Neural_Network constructor'''
-    network = Neural_Network([3, 5, 1])
+    #network = Neural_Network([3, 5, 1])
+    network = Neural_Network([6,6,6])
     
-    inputList = np.asarray([1,3.5,7.7,2.6,3,9.4]) #train the network to add 5 to a number
-    expected = np.asarray([6,8.5,12.7,7.6,8,14.4])
+    inputList = np.asarray([1,3,7,2,14,9]) #answer is mod 5 the sum of the input
+    expected = np.asarray([0,1,0,0,0,0])
 
     #print weights matricies
     print('Weights:')
@@ -120,16 +143,16 @@ def main():
     #print(sigmoid(2, 4, .5))
 
     '''debugging code for forward propogation'''
-    x = network.forward_propogate([0, .5, 1])
-    #network.forward_propogate(inputList)
-    #network.back_propagate(inputList,expected)
+    #x = network.forward_propogate([0, .5, 1])
+    network.forward_propogate(inputList)
+    network.back_propagate(inputList,expected)
 
     print('Layers:')
     for layer in network.layers:
         print(layer)
 
-    print("Output:")
-    print(x)
+    #print("Output:")
+    #print(x)
     print()
 
 
