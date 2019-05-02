@@ -83,7 +83,7 @@ class Neural_Network(object):
 #Define a constant c to use with gradient descent
 #Add c*dc/dw to each weight and c*dc/db for each bias
 #Repeat this whole process for each batch of training examples
-    '''
+
     def back_propagate(self, inputArray, expected):
         #only 1 training batch for now
         DcDa = [[]]        #step 1
@@ -100,7 +100,6 @@ class Neural_Network(object):
             for i in range(lenLayer): #step 3
                 DcDa[l].append(2*(self.layers[l][i]-expected[i]))
             for i in range(lenLayer): #step 4
-<<<<<<< HEAD
                 DaDz[l].append(sigmoid_prime(self.layers_unsquashed[l][i],4,0.5))
             if l != 0:
                 for j in range(len(self.weights[l-1])): #step 5
@@ -124,29 +123,8 @@ class Neural_Network(object):
             for w in range(len(self.weights[l])):
                # dcda = DcDa[l+1][]
                 pass #calculate DcDw
-=======
                 DaDz = sigmoid_prime(self.layers_unsquashed[l][i])
             for j in range(len(self.weights[l-1])):
-                for k in range(len(self.weights[l-1][j])):
-                    DzDw[l-1][j] = self.layers[l-1][k]
-    '''
-
-    def back_propagate(self, expected, DaDz, dzDw):
-        #only 1 training batch for now
-        DcDa = [[]]        #step 1
-        DaDz = [[]]
-        DzDw = [] #not sure if this should be a 3d array
-        for i in range(self.num_layers-1):
-            DcDa.append([])
-            DaDz.append([])
-            DzDw.append([])
-        for l in range(self.num_layers):
-            lenLayer = len(self.layers[l])
-            for i in range(lenLayer): #step 3
-                DcDa[l][i] = 2(self.layers[l][i]-expected[i])
-            for i in range(lenLayer): #step 4
-                DaDz = sigmoid_prime(self.layers_unsquashed[l][i])
-            for j in range(len(self.weights[l-1])): #step 5
                 for k in range(len(self.weights[l-1][j])):
                     DzDw[l-1][j] = self.layers[l-1][k]
 
