@@ -6,8 +6,14 @@ class ParameterError(Exception):
 def sigmoid(x, lam, beta):
     return 1.0/(1+ np.exp(-1 * lam * (x - beta)))
 
-def sigmoid_prime(self, input, lam, beta):
+def sigmoid_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
+
+def cost(actual, expected):
+    return (actual - expected) ** 2
+
+def cost_prime(actual, expected):
+    return 2 * (actual - expected)
 
 '''Class to created neural network with one hidden layer'''
 class Neural_Network(object):
@@ -19,12 +25,12 @@ class Neural_Network(object):
         self.num_layers = len(layer_sizes)
         self.input_size = layer_sizes[0]
         last_size = layer_sizes[0]
-    
+
         #generate weight matricies with random values from normal distribution
         for i in range(1, len(layer_sizes)):
             self.weights.append(np.random.randn(last_size, layer_sizes[i]))
             last_size = layer_sizes[i]
-    
+
         #generate biases for each neuron with random values from normal distribution
         for i in range(self.num_layers):
             layer_biases = []
@@ -37,28 +43,28 @@ class Neural_Network(object):
     def forward_propogate(self, input):
         if len(input) is not self.input_size:
             raise ParameterError('input does not match input size')
-    
+
         self.layers.append(input)
         self.layers_unsquashed.append(input)
         last_layer = input
-    
+
         #should I maintain values before applying sigmoidal squishification?
         #Yes. This is necessary to compute dz/da
         for i in range(1, self.num_layers):
             #matrix multiplication
             self.layers_unsquashed.append(np.dot(last_layer, self.weights[i - 1]))
-    
+
             #add biases
             for j in range(len(self.layers_unsquashed[i])):
                 self.layers_unsquashed[i][j] = self.layers_unsquashed[i][j] + self.biases[i][j]
-    
+
             #apply sigmoidal squishification
             self.layers.append([])
             self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
-    
+
             last_layer = self.layers[i]
-    
-    
+
+
         return self.layers[len(self.layers) - 1]
 
 #steps for backpropagation
@@ -77,7 +83,7 @@ class Neural_Network(object):
 #Define a constant c to use with gradient descent
 #Add c*dc/dw to each weight and c*dc/db for each bias
 #Repeat this whole process for each batch of training examples
-    
+    '''
     def back_propagate(self, inputArray, expected):
         #only 1 training batch for now
         DcDa = [[]]        #step 1
@@ -96,11 +102,48 @@ class Neural_Network(object):
             for j in range(len(self.weights[l-1])): #step 5
                 for k in range(len(self.weights[l-1][j])):
                     DzDw[l-1][j] = self.layers[l-1][k]
+    '''
+
+    def back_propagate(self, expected, DaDz, dzDw):
+        #only 1 training batch for now
+        DcDa = [[]]        #step 1
+        DaDz = [[]]
+        DzDw = [] #not sure if this should be a 3d array
+        for i in range(self.num_layers-1):
+            DcDa.append([])
+            DaDz.append([])
+            DzDw.append([])
+        for l in range(self.num_layers):
+            lenLayer = len(self.layers[l])
+            for i in range(lenLayer): #step 3
+                DcDa[l][i] = 2(self.layers[l][i]-expected[i])
+            for i in range(lenLayer): #step 4
+                DaDz = sigmoid_prime(self.layers_unsquashed[l][i])
+            for j in range(len(self.weights[l-1])): #step 5
+                for k in range(len(self.weights[l-1][j])):
+                    DzDw[l-1][j] = self.layers[l-1][k]
+
+    def train(self, training_samples, learning_rate):
+        #list of lists, one for each layer. We will maintain a running average
+        DaDz = []
+        DzDw = []
+        DcDa = []
+
+        for num_neurons in self.biases:
+            DaDz.append([0] * num_neurons)
+            DzDw.append([0] * num_neurons)
+
+
+
+
+
+
+
 
 def main():
     '''debugging code for Neural_Network constructor'''
     network = Neural_Network([3, 5, 1])
-    
+
     inputList = np.asarray([1,3.5,7.7,2.6,3,9.4]) #train the network to add 5 to a number
     expected = np.asarray([6,8.5,12.7,7.6,8,14.4])
 
