@@ -87,6 +87,7 @@ class Neural_Network(object):
     def back_propagate(self, inputArray, expected, DcDw, DcDb):
         #only 1 training batch for now
         DcDa = []        #step 1
+        DaDz = []
         
         lastLayer = self.layers[self.num_layers-1]
         for i in range(len(lastLayer)): #step 2
@@ -94,23 +95,20 @@ class Neural_Network(object):
             
         for l in range(self.num_layers-1):
             layerNum = self.num_layers - l
-            lenLayer = len(self.layers[l])
+            lenLayer = len(self.layers[layerNum])
             for i in range(lenLayer): #step 3
-                 DaDz_neuron = sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5)
-                 DcDa_neuron = DcDa[i] 
+                 DaDz[i] = sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5)
                  for k in range(len(self.weights[layerNum-1][i])):
                      DzDw_weight = self.layers[layerNum-1][k] #step 4
-                     DcDw[layerNum-1][i][k] += DaDz_neuron * DcDa_neuron * DzDw_weight #step 5
-                     DcDb[layerNum-1][i][k] += DaDz_neuron * DcDa_neuron #step 6
+                     DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
+                     DcDb[layerNum-1][i][k] += DaDz[i] * DcDa[i] #step 6
             for k in range(len(self.layers[layerNum-1])):
                 for i in range(lenLayer):
-                    pass #calculate dc/da(L-1)
+                    DcDa_old = DcDa[i]
+                    DzDa_neuron = self.weights[layerNum-1][i][k] #dz/da(L-1) = w(L)
+                    DcDa[i] += DcDa_old * DaDz[i] * DzDa_neuron
         print("DcDa:")
         print(DcDa)
-        print("DaDz:")
-        print(DaDz)
-        print("DzDw:")
-        print(DzDw)
         
         DcDw = []
         
