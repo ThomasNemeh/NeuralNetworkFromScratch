@@ -68,23 +68,23 @@ class Neural_Network(object):
 
 
         return self.layers[len(self.layers) - 1]
-
-#steps for backpropagation
-#Divide the training examples into batches
-#do the following for each training example in one batch:
-#1. make 2d arrays for dc/da, da/dz, and dz/dw
-#2. loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
-#3. loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
-#4. loop through the last layer of weights and store the activation of the neuron that feeds into the connection in dz/dw
-#5. calculate the derivative of the cost wrt each weight, which is dc/da * da/dz * dz/dw. Store this in dc/dw
-#6. calculate the derivative of the cost wrt each bias, which is dc/da * da/dz * 1. Store this in dc/db
-#7. for each neuron in layer L-1, loop through all neurons in layer L and calculate dc/da(L) * da(L)/dz * dz/da(L-1). Sum these values and store them in the next layer of dc/da.
-#8. Repeat steps 3-7 until you get to the bottom layer.
-#Then sum the resulting dc/dw and dc/db values for each weight and bias.
-#Define a constant c to use with gradient descent
-#Add c*dc/dw to each weight and c*dc/db for each bias
-#Repeat this whole process for each batch of training examples
-
+    '''
+    Steps for backpropagation
+    Divide the training examples into batches
+    do the following for each training example in one batch:
+    1. make 2d arrays for dc/da, da/dz, and dz/dw
+    2. loop through all output neurons using index i and calculate 2(self.layers[self.num_layers-1][i] - expected[i]), and store it in dc/da
+    3. loop through layers_unsquashed[self.num_layers-1] using index i and calculate sigmoid_prime(layers_unsquashed[self.numlayers-1][i]), and store it in da/dz
+    4. loop through the last layer of weights and store the activation of the neuron that feeds into the connection in dz/dw
+    5. calculate the derivative of the cost wrt each weight, which is dc/da * da/dz * dz/dw. Store this in dc/dw
+    6. calculate the derivative of the cost wrt each bias, which is dc/da * da/dz * 1. Store this in dc/db
+    7. for each neuron in layer L-1, loop through all neurons in layer L and calculate dc/da(L) * da(L)/dz * dz/da(L-1). Sum these values and store them in the next layer of dc/da.
+    8. Repeat steps 3-7 until you get to the bottom layer.
+    Then sum the resulting dc/dw and dc/db values for each weight and bias.
+    Define a constant c to use with gradient descent
+    Add c*dc/dw to each weight and c*dc/db for each bias
+    Repeat this whole process for each batch of training examples
+    '''
     def back_propagate(self, inputArray, expected, DcDw, DcDb):
         #only 1 training batch for now
         DcDa = []        #step 1
@@ -102,7 +102,7 @@ class Neural_Network(object):
                  for k in range(len(self.weights[layerNum-1][i])):
                      DzDw_weight = self.layers[layerNum-1][k] #step 4
                      DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
-                     DcDb[layerNum-1][i][k] += DaDz[i] * DcDa[i] #step 6
+                 DcDb[layerNum-1][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
             for k in range(len(self.layers[layerNum-1])):
                 DcDa_old = DcDa[i] #current layer
                 for i in range(lenLayer):
@@ -113,10 +113,17 @@ class Neural_Network(object):
     Sets DaDz and DzDw to a list of zeros corresponding to each layer of
     the neural net.
     '''
-    def zeroify(self, DaDz, DzDw):
+    def zeroify(self, DcDw, DcDb):
         for num_neurons in self.biases:
-            DaDz.append([0] * len(num_neurons))
-            DzDw.append([0] * len(num_neurons))
+            DcDb.append([0] * len(num_neurons))
+
+        for layer_num in range(len(self.weights)):
+            DcDw.append([])
+            DcDw[layer_num].append([] * len(self.weights[layer_num]))
+            print(DcDw)
+            for neuron in range(len(self.weights[layer_num])):
+                DcDw[layer_num][neuron].append([0] * len(self.weights[layer_num][neuron]))
+                #DcDw[layer_num][neuron].append(9)
 
     def randomize_batches(self, training_samples, num_batches, batch_min_len):
         #divide training samples into batches
@@ -136,32 +143,50 @@ class Neural_Network(object):
     The number of batches is equal to the number of iterations for one epoch
     Batches are not randomized after each epoch?
     '''
-    def train(self, training_samples, learning_rate, num_batches, batch_min_len, epochs):
+    def train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
         batches = self.randomize_batches(training_samples, num_batches, batch_min_len)
 
         #batches debugging statement
         print(batches)
 
-        for iteration in epochs:
+        for iteration in range(epochs):
             #list of lists, one for each layer. We will maintain a running average
             DcDw = []
             DcDb = []
             self.zeroify(DcDw, DcDb)
 
+            #debugging statements
+            print(DcDw)
+            print(DcDb)
+
             for batch in batches:
-                #run back propogation for each sample in batch
+                #run forward and back propogation for each sample in batch
                 inputs = batch[0]
                 expected = batch[1]
+                self.forward_propogate(inputs)
                 self.back_propogate(inputs, expected, DcDw, DcDb)
 
                 #average results to get DcDb and DcDw
                 batch_size = len(batch)
                 for layer in DcDw:
-                    map(lambda x: x / batch_size, layer)
+                    for neurons_next in layer:
+                        map(lambda x: x / batch_size, neurons_next)
                 for layer in DcDb:
                     map(lambda x: x / batch_size, layer)
 
+                '''
+                apply learning rule. Use activation of neuron in higher layer as expected.
+                for biases, activation not taken into account. Can use different learning rate,
+                should be lower.
+                '''
+                for layer_num in range(self.weights):
+                    for i in range(0, len(self.weights[layer_num])):
+                        for j in range(0, len(self.weights[layer_num][i])):
+                            self.weights[layer_num][i][j] -= DcDw[layer_num][i][j] * learning_rate_w * self.layers[layer_num][j]
 
+                for layer in range(self.biases):
+                    for neuron in range(self.biases[layer]):
+                        self.biases[layer][neuron] -= DcDb[layer_num][neuron] * learning_rate_w
 
 
 
@@ -206,6 +231,6 @@ def main():
 
     training_samples = [([0], [1]), ([34], [2]), ([0], [5]), ([10], [1]), ([0], [132]), ([0], [1]), ([23], [1]), ([0], [1]), ([12], [1]), ([0], [1])]
 
-    network.train(training_samples, .5, 3, 2, 5)
+    network.train(training_samples, .5, 3, 2, 5, 1)
 
 main()
