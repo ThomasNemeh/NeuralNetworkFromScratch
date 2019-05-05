@@ -86,15 +86,15 @@ class Neural_Network(object):
     Repeat this whole process for each batch of training examples
     '''
     def back_propagate(self, inputArray, expected, DcDw, DcDb):
-        #only 1 training batch for now
-        DcDa = []        #step 1
+        DcDa = []
         DaDz = []
 
         lastLayer = self.layers[self.num_layers-1]
         for i in range(len(lastLayer)): #step 2
-            DcDa[i] = cost_prime(lastLayer[i],expected[i])
+            DcDa[i].append(cost_prime(lastLayer[i],expected[i]))
 
         for l in range(self.num_layers-1):
+            #calculate DcDb and DcDw for current layer
             layerNum = self.num_layers - l
             lenLayer = len(self.layers[layerNum])
             for i in range(lenLayer): #step 3
@@ -103,6 +103,9 @@ class Neural_Network(object):
                      DzDw_weight = self.layers[layerNum-1][k] #step 4
                      DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
                  DcDb[layerNum-1][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
+
+            #calculate DcDa for previous layer
+            DcDa = [0] * len(self.layers[layerNum-1])
             for k in range(len(self.layers[layerNum-1])):
                 DcDa_old = DcDa[i] #current layer
                 for i in range(lenLayer):
