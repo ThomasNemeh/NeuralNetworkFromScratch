@@ -88,11 +88,11 @@ class Neural_Network(object):
         #only 1 training batch for now
         DcDa = []        #step 1
         DaDz = []
-        
+
         lastLayer = self.layers[self.num_layers-1]
         for i in range(len(lastLayer)): #step 2
             DcDa[i] = cost_prime(lastLayer[i],expected[i])
-            
+
         for l in range(self.num_layers-1):
             layerNum = self.num_layers - l
             lenLayer = len(self.layers[layerNum])
@@ -103,25 +103,27 @@ class Neural_Network(object):
                      DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
                      DcDb[layerNum-1][i][k] += DaDz[i] * DcDa[i] #step 6
             for k in range(len(self.layers[layerNum-1])):
+                DcDa_old = DcDa[i] #current layer
                 for i in range(lenLayer):
-                    DcDa_old = DcDa[i]
-                    DzDa_neuron = self.weights[layerNum-1][i][k] #dz/da(L-1) = w(L)
-                    DcDa[i] += DcDa_old * DaDz[i] * DzDa_neuron
+                    DzDa_neuron_prev = self.weights[layerNum-1][i][k] #dz/da(L-1) = w(L)
+                    DcDa[i] += DcDa_old * DaDz[i] * DzDa_neuron_prev
+        '''
         print("DcDa:")
         print(DcDa)
-        
+
         DcDw = []
-        
+
         for l in range(self.num_layers-1):
             DcDw.append([])
             for i in range(len(self.layers[l])):
                 DcDw.append([])
-        
+
         for l in range(self.num_layers-1):
             for w in range(len(self.weights[l])):
                # dcda = DcDa[l+1][]
                 pass #calculate DcDw
-                
+        '''
+
     def train(self, training_samples, learning_rate):
         #list of lists, one for each layer. We will maintain a running average
         DaDz = []
@@ -131,11 +133,11 @@ class Neural_Network(object):
         for num_neurons in self.biases:
             DaDz.append([0] * num_neurons)
             DzDw.append([0] * num_neurons)
-            
+
        # for training samples:
         #    back_propogation(..., DaDz, DzDw)
-            
-        
+
+
 
 
 
@@ -143,7 +145,7 @@ def main():
     '''debugging code for Neural_Network constructor'''
     #network = Neural_Network([3, 5, 1])
     network = Neural_Network([6,6,6])
-    
+
     inputList = np.asarray([1,3,7,2,14,9]) #answer is mod 5 the sum of the input
     expected = np.asarray([0,1,0,0,0,0])
 
