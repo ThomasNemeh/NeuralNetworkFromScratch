@@ -91,18 +91,16 @@ class Neural_Network(object):
 
         lastLayer = self.layers[self.num_layers-1]
         for i in range(len(lastLayer)): #step 2
-            DcDa[i].append(cost_prime(lastLayer[i],expected[i]))
+            DcDa.append(cost_prime(lastLayer[i],expected[i]))
 
-        for l in range(self.num_layers-1):
-            #calculate DcDb and DcDw for current layer
-            layerNum = self.num_layers - l
+        for layerNum in range(self.num_layers - 1, 1, -1):
             lenLayer = len(self.layers[layerNum])
             for i in range(lenLayer): #step 3
-                 DaDz[i] = sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5)
+                 DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5))
                  for k in range(len(self.weights[layerNum-1][i])):
                      DzDw_weight = self.layers[layerNum-1][k] #step 4
                      DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
-                 DcDb[layerNum-1][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
+                 DcDb[layerNum][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
 
             #calculate DcDa for previous layer
             DcDa = [0] * len(self.layers[layerNum-1])
@@ -122,7 +120,7 @@ class Neural_Network(object):
 
         for layer_num in range(len(self.weights)):
             DcDw.append([])
-            DcDw[layer_num].append([] * len(self.weights[layer_num]))
+            #DcDw[layer_num].append([] * len(self.weights[layer_num]))
             for neuron in range(len(self.weights[layer_num])):
                 DcDw[layer_num].append([0] * len(self.weights[layer_num][neuron]))
                 #DcDw[layer_num][neuron].append(9)
@@ -149,7 +147,9 @@ class Neural_Network(object):
         batches = self.randomize_batches(training_samples, num_batches, batch_min_len)
 
         #batches debugging statement
+        print('batches: ')
         print(batches)
+        print()
 
         for iteration in range(epochs):
             #list of lists, one for each layer. We will maintain a running average
@@ -158,8 +158,12 @@ class Neural_Network(object):
             self.zeroify(DcDw, DcDb)
 
             #debugging statements
+            print('DcDw initial: ')
             print(DcDw)
+            print()
+            print('DcDb initial: ')
             print(DcDb)
+            print()
 
             for batch in batches:
                 for sample in batch:
@@ -230,6 +234,7 @@ def main():
     training_samples = [([0], [1]), ([34], [2]), ([0], [5]), ([10], [1]), ([0], [132]), ([0], [1]), ([23], [1]), ([0], [1]), ([12], [1]), ([0], [1])]
 
     network = Neural_Network([1,6,1])
+
     network.train(training_samples, .5, 3, 2, 5, 1)
 
 main()
