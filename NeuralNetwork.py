@@ -108,47 +108,61 @@ class Neural_Network(object):
                 for i in range(lenLayer):
                     DzDa_neuron_prev = self.weights[layerNum-1][i][k] #dz/da(L-1) = w(L)
                     DcDa[i] += DcDa_old * DaDz[i] * DzDa_neuron_prev
-        '''
-        print("DcDa:")
-        print(DcDa)
-
-        DcDw = []
-
-        for l in range(self.num_layers-1):
-            DcDw.append([])
-            for i in range(len(self.layers[l])):
-                DcDw.append([])
-
-        for l in range(self.num_layers-1):
-            for w in range(len(self.weights[l])):
-               # dcda = DcDa[l+1][]
-                pass #calculate DcDw
-        '''
 
     '''
     Sets DaDz and DzDw to a list of zeros corresponding to each layer of
     the neural net.
-     '''
+    '''
     def zeroify(self, DaDz, DzDw):
         for num_neurons in self.biases:
-            DaDz.append([0] * num_neurons)
-            DzDw.append([0] * num_neurons)
+            DaDz.append([0] * len(num_neurons))
+            DzDw.append([0] * len(num_neurons))
 
-    #run back prop over and over again for given batch. Just run ov
-    def train(self, training_samples, learning_rate, num_batches):
-        batch_len = len(training_samples) / num_batches
-
+    def randomize_batches(self, training_samples, num_batches, batch_min_len):
+        #divide training samples into batches
+        batch_len = int(len(training_samples) / num_batches)
         random.shuffle(training_samples)
+        batches = [training_samples[x:x+batch_len] for x in range(0, len(training_samples), batch_len)]
 
-        batches = [training_samples[x:x+batch_len] for x in xrange(0, len(training_samples), batch_len)]
+        #If last batch is < batch_min_length, concatenate last 2 batches
+        if len(batches[len(batches) - 1]) < batch_min_len and len(batches) >= 2:
+            batches[len(batches) - 2] = batches[len(batches) - 2] + batches[len(batches) - 1]
+            batches.pop(len(batches) - 1)
 
+        return batches
+
+    '''
+    epoch: number of times entire data set is passed through neural net
+    The number of batches is equal to the number of iterations for one epoch
+    Batches are not randomized after each epoch?
+    '''
+    def train(self, training_samples, learning_rate, num_batches, batch_min_len, epochs):
+        batches = self.randomize_batches(training_samples, num_batches, batch_min_len)
+
+        #batches debugging statement
         print(batches)
 
-        #list of lists, one for each layer. We will maintain a running average
-        DaDz = []
-        DzDw = []
+        for iteration in epochs:
+            #list of lists, one for each layer. We will maintain a running average
+            DcDw = []
+            DcDb = []
+            self.zeroify(DcDw, DcDb)
 
-        zeroify(DaDz, DzDw)
+            for batch in batches:
+                #run back propogation for each sample in batch
+                inputs = batch[0]
+                expected = batch[1]
+                self.back_propogate(inputs, expected, DcDw, DcDb)
+
+                #average results to get DcDb and DcDw
+                batch_size = len(batch)
+                for layer in DcDw:
+                    map(lambda x: x / batch_size, layer)
+                for layer in DcDb:
+                    map(lambda x: x / batch_size, layer)
+
+
+
 
 
 def main():
@@ -180,7 +194,6 @@ def main():
     '''debugging code for forward propogation'''
     #x = network.forward_propogate([0, .5, 1])
     network.forward_propogate(inputList)
-    network.back_propagate(inputList,expected)
 
     print('Layers:')
     for layer in network.layers:
@@ -191,8 +204,8 @@ def main():
     print()
     print('*********************************************************')
 
-    training_samples = [([0], [1]), ([34], [2]), ([0], [5]), ([01], [1]), ([0], [132]), ([0], [1]), ([23], [1]), ([0], [1]), ([12], [1]), ([0], [1])]
+    training_samples = [([0], [1]), ([34], [2]), ([0], [5]), ([10], [1]), ([0], [132]), ([0], [1]), ([23], [1]), ([0], [1]), ([12], [1]), ([0], [1])]
 
-    train(training_samples, .5, 3)
+    network.train(training_samples, .5, 3, 2, 5)
 
 main()
