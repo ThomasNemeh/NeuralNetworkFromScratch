@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 class ParameterError(Exception):
     pass
@@ -124,21 +125,30 @@ class Neural_Network(object):
                 pass #calculate DcDw
         '''
 
-    def train(self, training_samples, learning_rate):
-        #list of lists, one for each layer. We will maintain a running average
-        DaDz = []
-        DzDw = []
-        DcDa = []
-
+    '''
+    Sets DaDz and DzDw to a list of zeros corresponding to each layer of
+    the neural net.
+     '''
+    def zeroify(self, DaDz, DzDw):
         for num_neurons in self.biases:
             DaDz.append([0] * num_neurons)
             DzDw.append([0] * num_neurons)
 
-       # for training samples:
-        #    back_propogation(..., DaDz, DzDw)
+    #run back prop over and over again for given batch. Just run ov
+    def train(self, training_samples, learning_rate, num_batches):
+        batch_len = len(training_samples) / num_batches
 
+        random.shuffle(training_samples)
 
+        batches = [training_samples[x:x+batch_len] for x in xrange(0, len(training_samples), batch_len)]
 
+        print(batches)
+
+        #list of lists, one for each layer. We will maintain a running average
+        DaDz = []
+        DzDw = []
+
+        zeroify(DaDz, DzDw)
 
 
 def main():
@@ -179,7 +189,10 @@ def main():
     #print("Output:")
     #print(x)
     print()
+    print('*********************************************************')
 
+    training_samples = [([0], [1]), ([34], [2]), ([0], [5]), ([01], [1]), ([0], [132]), ([0], [1]), ([23], [1]), ([0], [1]), ([12], [1]), ([0], [1])]
 
+    train(training_samples, .5, 3)
 
 main()
