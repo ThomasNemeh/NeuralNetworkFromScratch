@@ -120,9 +120,8 @@ class Neural_Network(object):
         for layer_num in range(len(self.weights)):
             DcDw.append([])
             DcDw[layer_num].append([] * len(self.weights[layer_num]))
-            print(DcDw)
             for neuron in range(len(self.weights[layer_num])):
-                DcDw[layer_num][neuron].append([0] * len(self.weights[layer_num][neuron]))
+                DcDw[layer_num].append([0] * len(self.weights[layer_num][neuron]))
                 #DcDw[layer_num][neuron].append(9)
 
     def randomize_batches(self, training_samples, num_batches, batch_min_len):
@@ -160,35 +159,34 @@ class Neural_Network(object):
             print(DcDb)
 
             for batch in batches:
-                #run forward and back propogation for each sample in batch
-                inputs = batch[0]
-                expected = batch[1]
-                self.forward_propogate(inputs)
-                self.back_propogate(inputs, expected, DcDw, DcDb)
+                for sample in batch:
+                    #run forward and back propogation for each sample in batch
+                    inputs = sample[0]
+                    expected = sample[1]
+                    self.forward_propogate(inputs)
+                    self.back_propagate(inputs, expected, DcDw, DcDb)
 
-                #average results to get DcDb and DcDw
-                batch_size = len(batch)
-                for layer in DcDw:
-                    for neurons_next in layer:
-                        map(lambda x: x / batch_size, neurons_next)
-                for layer in DcDb:
-                    map(lambda x: x / batch_size, layer)
+                    #average results to get DcDb and DcDw
+                    batch_size = len(batch)
+                    for layer in DcDw:
+                        for neurons_next in layer:
+                            map(lambda x: x / batch_size, neurons_next)
+                    for layer in DcDb:
+                        map(lambda x: x / batch_size, layer)
 
-                '''
-                apply learning rule. Use activation of neuron in higher layer as expected.
-                for biases, activation not taken into account. Can use different learning rate,
-                should be lower.
-                '''
-                for layer_num in range(self.weights):
-                    for i in range(0, len(self.weights[layer_num])):
-                        for j in range(0, len(self.weights[layer_num][i])):
-                            self.weights[layer_num][i][j] -= DcDw[layer_num][i][j] * learning_rate_w * self.layers[layer_num][j]
+                    '''
+                    apply learning rule. Use activation of neuron in higher layer as expected.
+                    for biases, activation not taken into account. Can use different learning rate,
+                    should be lower.
+                    '''
+                    for layer_num in range(self.weights):
+                        for i in range(0, len(self.weights[layer_num])):
+                            for j in range(0, len(self.weights[layer_num][i])):
+                                self.weights[layer_num][i][j] -= DcDw[layer_num][i][j] * learning_rate_w * self.layers[layer_num][j]
 
-                for layer in range(self.biases):
-                    for neuron in range(self.biases[layer]):
-                        self.biases[layer][neuron] -= DcDb[layer_num][neuron] * learning_rate_w
-
-
+                    for layer in range(self.biases):
+                        for neuron in range(self.biases[layer]):
+                            self.biases[layer][neuron] -= DcDb[layer_num][neuron] * learning_rate_w
 
 def main():
     '''debugging code for Neural_Network constructor'''
@@ -197,7 +195,7 @@ def main():
 
     inputList = np.asarray([1,3,7,2,14,9]) #answer is mod 5 the sum of the input
     expected = np.asarray([0,1,0,0,0,0])
-    
+
     #print weights matricies
     print('Weights:')
     for weights_matrix in network.weights:
@@ -227,12 +225,8 @@ def main():
     print('*********************************************************')
 
     training_samples = [([0], [1]), ([34], [2]), ([0], [5]), ([10], [1]), ([0], [132]), ([0], [1]), ([23], [1]), ([0], [1]), ([12], [1]), ([0], [1])]
-<<<<<<< HEAD
 
+    network = Neural_Network([1,6,1])
     network.train(training_samples, .5, 3, 2, 5, 1)
-=======
-    #need to put in epochs as a parameter
-    network.train(training_samples, .5, 3, 2, 5)
->>>>>>> 60a7c8bfa126d4b19a9e3f7a0b67ea62b8ee9502
 
 main()
