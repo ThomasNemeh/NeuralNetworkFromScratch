@@ -107,7 +107,7 @@ class Neural_Network(object):
                 DcDa_old = DcDa[i] #current layer
                 for i in range(lenLayer):
                     DzDa_neuron_prev = self.weights[layerNum-1][i][k] #dz/da(L-1) = w(L)
-                    DcDa[i] += DcDa_old * DaDz[i] * DzDa_neuron_prev
+                    DcDa[k] += DcDa_old * DaDz[i] * DzDa_neuron_prev
 
     '''
     Sets DaDz and DzDw to a list of zeros corresponding to each layer of
@@ -172,10 +172,7 @@ def main():
 
     inputList = np.asarray([1,3,7,2,14,9]) #answer is mod 5 the sum of the input
     expected = np.asarray([0,1,0,0,0,0])
-
-    inputList = np.asarray([1,3.5,7.7,2.6,3,9.4]) #train the network to add 5 to a number
-    expected = np.asarray([6,8.5,12.7,7.6,8,14.4])
-
+    
     #print weights matricies
     print('Weights:')
     for weights_matrix in network.weights:
