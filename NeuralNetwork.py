@@ -215,8 +215,8 @@ class Neural_Network(object):
                     self.forward_propogate(inputs)
                     self.back_propagate(inputs, expected, DcDw, DcDb)
 
-                    #average results to get DcDb and DcDw
-                    batch_size = len(batch)
+                #average results to get DcDb and DcDw
+                batch_size = len(batch)
                 
                 print('DcDw before averaging. batch_size = ' + str(batch_size))
                 print(DcDw)
