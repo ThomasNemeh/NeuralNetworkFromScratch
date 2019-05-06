@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import math
 
 class ParameterError(Exception):
     pass
@@ -244,8 +245,9 @@ def main():
     print()
 
     print('******************************************************************************************************************')
-
-    training_samples = [([0], [1]), ([34], [2]), ([0], [5]), ([10], [1]), ([0], [132]), ([0], [1]), ([23], [1]), ([0], [1]), ([12], [1]), ([0], [1])]
+    training_samples = []
+    for x in range(0, 1000):
+        training_samples.append(([x/100], [math.sin(x/100)]))
 
     network = Neural_Network([1,6,1])
 
@@ -261,7 +263,8 @@ def main():
         print(bias_list)
     print()
 
-    network.train(training_samples, .5, 3, 2, 5, 1)
+    #train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
+    network.train(training_samples, .5, .5, 10, 100, 10)
 
     #print weights matricies
     print('Weights after training:')
@@ -278,7 +281,7 @@ def main():
     '''debugging code for sigmoidal squishification'''
     #print(sigmoid(2, 4, .5))
 
-    network.forward_propogate([0])
+    network.forward_propogate([1])
 
     print('Layers:')
     for layer in network.layers:
