@@ -5,28 +5,38 @@ import math
 class ParameterError(Exception):
     pass
 
+'''
 def sigmoid(x, lam, beta):
     return 1.0/(1+ np.exp(-1 * lam * (x - beta)))
 
 def sigmoid_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
+'''
+def sigmoid(s):
+    # activation function
+    return 1/(1+np.exp(-s))
+
+def sigmoid_prime(s):
+    #derivative of sigmoid
+    return s * (1 - s)
 
 #does ordering of actual and expected matter?
-def cost(actual, expected):
-    return (actual - expected) ** 2
+def cost(true, predicted):
+    return (true - predicted) ** 2
 
-def cost_prime(actual, expected):
-    return 2 * (actual - expected)
+def cost_prime(true, predicted):
+    return 2 * (true - predicted)
 
 '''Class to created neural network with one hidden layer'''
 class Neural_Network(object):
-    def __init__(self, layer_sizes):
+    def __init__(self, layer_sizes, regression):
         self.weights = []
         self.biases = []
         self.layers = []
         self.layers_unsquashed = []
         self.num_layers = len(layer_sizes)
         self.input_size = layer_sizes[0]
+        self.regression_problem = regression
         last_size = layer_sizes[0]
 
         #generate weight matricies with random values from normal distribution
@@ -65,7 +75,12 @@ class Neural_Network(object):
 
             #apply sigmoidal squishification
             self.layers.append([])
-            self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
+            #self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
+            '''with new sigmoid function'''
+            if self.regression_problem is True and i is self.num_layers - 1:
+                self.layers[i] = self.layers_unsquashed[i]
+            else:
+                self.layers[i] = [sigmoid(z) for z in self.layers_unsquashed[i]]
 
             last_layer = self.layers[i]
 
@@ -96,22 +111,40 @@ class Neural_Network(object):
         for i in range(len(lastLayer)): #step 2
             DcDa.append(cost_prime(lastLayer[i],expected[i]))
 
+        final_layer = True
+
         for layerNum in range(self.num_layers - 1, 1, -1):
             lenLayer = len(self.layers[layerNum])
             for i in range(lenLayer): #step 3
-                 DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5))
+                 #DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5))
+                 '''with new sigmoid function'''
+                 DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i]))
                  for k in range(len(self.weights[layerNum-1][i])):
                      DzDw_weight = self.layers[layerNum-1][k] #step 4
-                     DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
-                 DcDb[layerNum][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
-            
+                     if self.regression_problem is True and final_layer is True:
+                         DcDw[layerNum-1][i][k] += DcDa[i] * DzDw_weight #step 5
+                     else:
+                         DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
+                 if self.regression_problem is True and final_layer is True:
+                     DcDb[layerNum][i] += DcDa[i] #step 6. Note that DcDb is a 2D array
+                 else:
+                     DcDb[layerNum][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
+
             #calculate DcDa for previous layer
-            DcDa = [0] * len(self.layers[layerNum-1])
+            DcDa_prev_layer = [0] * len(self.layers[layerNum-1])
             for i in range(lenLayer):
                 DcDa_old = DcDa[i] #current layer
-                for j in range(len(self.layers[layerNum-1])): 
+                for j in range(len(self.layers[layerNum-1])):
                     DzDa_neuron_prev = self.weights[layerNum-1][j][i] #dz/da(L-1) = w(L)
-                    DcDa[j] += DcDa_old * DaDz[i] * DzDa_neuron_prev
+                    if self.regression_problem is True and final_layer is True:
+                        DcDa_prev_layer[j] += DcDa_old * DzDa_neuron_prev
+                    else:
+                        DcDa_prev_layer[j] += DcDa_old * DaDz[i] * DzDa_neuron_prev
+
+            DcDa = DcDa_prev_layer
+            final_layer = False
+            print('DcDw: ' + str(DcDw) + '***************************************')
+            print()
     '''
     Sets DaDz and DzDw to a list of zeros corresponding to each layer of
     the neural net.
@@ -155,10 +188,12 @@ class Neural_Network(object):
 
             batches = self.randomize_batches(training_samples, num_batches, batch_min_len)
 
+            '''
             #batches debugging statement
             print('batches: ')
             print(batches)
             print()
+            '''
 
             #debugging statements
             print('DcDw initial: ')
@@ -178,30 +213,48 @@ class Neural_Network(object):
 
                     #average results to get DcDb and DcDw
                     batch_size = len(batch)
-                    for layer in DcDw:
-                        for neurons_next in layer:
-                            map(lambda x: x / batch_size, neurons_next)
-                    for layer in DcDb:
-                        map(lambda x: x / batch_size, layer)
 
-                    '''
-                    apply learning rule. Use activation of neuron in higher layer as expected.
-                    for biases, activation not taken into account. Can use different learning rate,
-                    should be lower.
-                    '''
+                print('DcDw before averaging. batch_size = ' + str(batch_size))
+                print(DcDw)
+                print()
+                print('DcDb before averaging:')
+                print(DcDb)
+                print()
 
-                    for layer_w_num in range(len(self.weights)):
-                        for i in range(0, len(self.weights[layer_w_num])):
-                            for j in range(0, len(self.weights[layer_w_num][i])):
-                                #self.weights[layer_num][i][j] -= DcDw[layer_num][i][j] * learning_rate_w * self.layers[layer_num][j]
-                                self.weights[layer_w_num][i][j] = DcDw[layer_w_num][i][j] * learning_rate_w * self.layers[layer_w_num + 1][j]
+                for i in range(len(DcDw)):
+                    for j in range(len(DcDw[i])):
+                        DcDw[i][j] = map(lambda x: x / batch_size, DcDw[i][j])
+                for i in range(len(DcDb)):
+                    DcDb[i] = map(lambda x: x / batch_size, DcDb[i])
 
-                    for layer in range(len(self.biases)):
-                        for neuron in range(len(self.biases[layer])):
-                            self.biases[layer][neuron] -= DcDb[layer][neuron] * learning_rate_b
+                print('DcDw after averaging. batch_size = ' + str(batch_size))
+                print(DcDw)
+                print()
+                print('DcDb after averaging:')
+                print(DcDb)
+                print()
+
+                exit()
+
+                '''
+                apply learning rule. Use activation of neuron in higher layer as expected.
+                for biases, activation not taken into account. Can use different learning rate,
+                should be lower.
+                '''
+
+                for layer_w_num in range(len(self.weights)):
+                    for i in range(0, len(self.weights[layer_w_num])):
+                        for j in range(0, len(self.weights[layer_w_num][i])):
+                            #self.weights[layer_num][i][j] -= DcDw[layer_num][i][j] * learning_rate_w * self.layers[layer_num][j]
+                            self.weights[layer_w_num][i][j] += DcDw[layer_w_num][i][j] * learning_rate_w
+
+                for layer in range(len(self.biases)):
+                    for neuron in range(len(self.biases[layer])):
+                        self.biases[layer][neuron] += DcDb[layer][neuron] * learning_rate_b
 
 def main():
-    '''debugging code for Neural_Network constructor'''
+    '''
+    #debugging code for Neural_Network constructor
     #network = Neural_Network([3, 5, 1])
     network = Neural_Network([6,6,6])
 
@@ -220,10 +273,10 @@ def main():
         print(bias_list)
     print()
 
-    '''debugging code for sigmoidal squishification'''
+    #debugging code for sigmoidal squishification
     #print(sigmoid(2, 4, .5))
 
-    '''debugging code for forward propogation'''
+    #debugging code for forward propogation
     #x = network.forward_propogate([0, .5, 1])
     network.forward_propogate(inputList)
 
@@ -236,11 +289,12 @@ def main():
     print()
 
     print('******************************************************************************************************************')
+    '''
     training_samples = []
     for x in range(0, 1000):
         training_samples.append(([x/100], [math.sin(x/100)]))
 
-    network = Neural_Network([1,6,1])
+    network = Neural_Network([1, 5, 1], True)
 
     #print weights matricies
     print('Weights before training:')
@@ -255,7 +309,7 @@ def main():
     print()
 
     #train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
-    network.train(training_samples, .5, .5, 10, 100, 10)
+    network.train(training_samples, .5, .5, 10, 100, 1)
 
     #print weights matricies
     print('Weights after training:')
