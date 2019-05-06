@@ -103,22 +103,13 @@ class Neural_Network(object):
                      DzDw_weight = self.layers[layerNum-1][k] #step 4
                      DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
                  DcDb[layerNum][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
-            '''
-            #calculate DcDa for previous layer
-            DcDa = [0] * len(self.layers[layerNum-1])
-            for k in range(len(self.layers[layerNum-1])):
-                DcDa_old = DcDa[k] #current layer
-                for i in range(lenLayer):
-                    DzDa_neuron_prev = self.weights[layerNum-1][i][k] #dz/da(L-1) = w(L)
-                    DcDa[k] += DcDa_old * DaDz[i] * DzDa_neuron_prev
-            '''
-
+            
             #calculate DcDa for previous layer
             DcDa = [0] * len(self.layers[layerNum-1])
             for i in range(lenLayer):
                 DcDa_old = DcDa[i] #current layer
-                for j in range(len(self.layers[layerNum-1])):
-                    DzDa_neuron_prev = self.weights[layerNum-1][j][i] #dz/da(L-1) = w(L)
+                for j in range(len(self.layers[layerNum-1])): 
+                    DzDa_neuron_prev = self.weights[layerNum-1][i][j] #dz/da(L-1) = w(L)
                     DcDa[j] += DcDa_old * DaDz[i] * DzDa_neuron_prev
     '''
     Sets DaDz and DzDw to a list of zeros corresponding to each layer of
