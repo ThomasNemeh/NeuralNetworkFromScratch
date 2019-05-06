@@ -132,6 +132,7 @@ class Neural_Network(object):
 
             #calculate DcDa for previous layer
             DcDa_prev_layer = [0] * len(self.layers[layerNum-1])
+            #print('DcDa old: ' + str(DcDa) + '***************************************')
             for i in range(lenLayer):
                 DcDa_old = DcDa[i] #current layer
                 for j in range(len(self.layers[layerNum-1])):
@@ -143,8 +144,11 @@ class Neural_Network(object):
 
             DcDa = DcDa_prev_layer
             final_layer = False
+            '''
             print('DcDw: ' + str(DcDw) + '***************************************')
+            print('DcDa new: ' + str(DcDa) + '***************************************')
             print()
+            '''
     '''
     Sets DaDz and DzDw to a list of zeros corresponding to each layer of
     the neural net.
@@ -213,7 +217,7 @@ class Neural_Network(object):
 
                     #average results to get DcDb and DcDw
                     batch_size = len(batch)
-
+                
                 print('DcDw before averaging. batch_size = ' + str(batch_size))
                 print(DcDw)
                 print()
@@ -221,11 +225,23 @@ class Neural_Network(object):
                 print(DcDb)
                 print()
 
+
+                '''
                 for i in range(len(DcDw)):
                     for j in range(len(DcDw[i])):
                         DcDw[i][j] = map(lambda x: x / batch_size, DcDw[i][j])
                 for i in range(len(DcDb)):
                     DcDb[i] = map(lambda x: x / batch_size, DcDb[i])
+                '''
+
+                for i in range(len(DcDw)):
+                    for j in range(len(DcDw[i])):
+                        for k in range(len(DcDw[i][j])):
+                            DcDw[i][j][k] = DcDw[i][j][k] / batch_size
+
+                for i in range(len(DcDb)):
+                    for j in range(len(DcDb[i])):
+                        DcDb[i][j] = DcDb[i][j] / batch_size
 
                 print('DcDw after averaging. batch_size = ' + str(batch_size))
                 print(DcDw)
@@ -309,7 +325,7 @@ def main():
     print()
 
     #train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
-    network.train(training_samples, .5, .5, 10, 100, 1)
+    network.train(training_samples, .5, .5, 10, 100, 10)
 
     #print weights matricies
     print('Weights after training:')
