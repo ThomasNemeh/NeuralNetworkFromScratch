@@ -112,43 +112,54 @@ class Neural_Network(object):
             DcDa.append(cost_prime(lastLayer[i],expected[i]))
 
         final_layer = True
-
-        for layerNum in range(self.num_layers - 1, 1, -1):
+        print('New Sample!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        #should there be a 1 at the end
+        for layerNum in range(self.num_layers - 1, 0, -1):
+            print("layerNum: " + str(layerNum))
             lenLayer = len(self.layers[layerNum])
+            lenLayerPrev = len(self.layers[layerNum - 1])
+            #i is each neuron in current layer!!!!!
             for i in range(lenLayer): #step 3
+                 print("i: " + str(i))
                  #DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5))
                  '''with new sigmoid function'''
                  DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i]))
+            for i in range(lenLayerPrev):
+                 print("i: " + str(i))
                  for k in range(len(self.weights[layerNum-1][i])):
+                     print("k: " + str(k))
                      DzDw_weight = self.layers[layerNum-1][k] #step 4
                      if self.regression_problem is True and final_layer is True:
+                         #print(DcDa[i] * DzDw_weight)
                          DcDw[layerNum-1][i][k] += DcDa[i] * DzDw_weight #step 5
                      else:
+                         #print(DaDz[i] * DcDa[i] * DzDw_weight)
                          DcDw[layerNum-1][i][k] += DaDz[i] * DcDa[i] * DzDw_weight #step 5
                  if self.regression_problem is True and final_layer is True:
                      DcDb[layerNum][i] += DcDa[i] #step 6. Note that DcDb is a 2D array
                  else:
                      DcDb[layerNum][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
+                 final_layer = False
 
             #calculate DcDa for previous layer
-            DcDa_prev_layer = [0] * len(self.layers[layerNum-1])
+            DcDa_prev_layer = [0] * lenLayerPrev
             #print('DcDa old: ' + str(DcDa) + '***************************************')
             for i in range(lenLayer):
                 DcDa_old = DcDa[i] #current layer
-                for j in range(len(self.layers[layerNum-1])):
+                for j in range(lenLayerPrev):
                     DzDa_neuron_prev = self.weights[layerNum-1][j][i] #dz/da(L-1) = w(L)
                     if self.regression_problem is True and final_layer is True:
                         DcDa_prev_layer[j] += DcDa_old * DzDa_neuron_prev
                     else:
                         DcDa_prev_layer[j] += DcDa_old * DaDz[i] * DzDa_neuron_prev
-
+            print('Layer num old: ' + str(layerNum))
+            print('DcDa old: ' + str(DcDa))
             DcDa = DcDa_prev_layer
-            final_layer = False
-            '''
-            print('DcDw: ' + str(DcDw) + '***************************************')
-            print('DcDa new: ' + str(DcDa) + '***************************************')
             print()
-            '''
+            print('Layer num new: ' + str(layerNum - 1))
+            print('DcDa new: ' + str(DcDa))
+            print()
+
     '''
     Sets DaDz and DzDw to a list of zeros corresponding to each layer of
     the neural net.
@@ -215,16 +226,15 @@ class Neural_Network(object):
                     self.forward_propogate(inputs)
                     self.back_propagate(inputs, expected, DcDw, DcDb)
 
-                    #average results to get DcDb and DcDw
-                    batch_size = len(batch)
-                
+                #average results to get DcDb and DcDw
+                batch_size = len(batch)
+
                 print('DcDw before averaging. batch_size = ' + str(batch_size))
                 print(DcDw)
                 print()
                 print('DcDb before averaging:')
                 print(DcDb)
                 print()
-
 
                 '''
                 for i in range(len(DcDw)):
@@ -251,6 +261,7 @@ class Neural_Network(object):
                 print()
 
                 exit()
+
 
                 '''
                 apply learning rule. Use activation of neuron in higher layer as expected.
