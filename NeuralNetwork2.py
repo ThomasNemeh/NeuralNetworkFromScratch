@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import math
+import matplotlib.pyplot as plt
 
 class ParameterError(Exception):
     pass
@@ -69,6 +70,12 @@ class Neural_Network(object):
         for i in range(1, self.num_layers):
             #matrix multiplication
             self.layers_unsquashed.append(np.dot(last_layer, self.weights[i - 1]))
+#            if i == self.num_layers - 1:
+#                print("@@@@@@")
+#                print(last_layer)
+#                print(self.weights[i-1])
+#                print(self.layers_unsquashed[-1])
+#                print("%%%%%")
 
             #add biases
             for j in range(len(self.layers_unsquashed[i])):
@@ -108,9 +115,9 @@ class Neural_Network(object):
         DcDa = []
 
         lastLayer = self.layers[self.num_layers-1]
-        print('expected is '  + str(expected[0]))
         for i in range(len(lastLayer)): #step 2
             DcDa.append(cost_prime(expected[i], lastLayer[i]))
+            #print(expected[i], lastLayer[i], DcDa)
             #print('True!!!!!!: ' + str(lastLayer[i]))
             #print('Expected!!:' + str(expected[i]))
 
@@ -128,7 +135,7 @@ class Neural_Network(object):
                  #print("i: " + str(i))
                  #DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5))
                  '''with new sigmoid function'''
-                 #DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i]))
+                 '''Change HERE!'''
                  DaDz.append(sigmoid_prime(self.layers[layerNum][i]))
             for i in range(lenLayerPrev):
                  #print("i: " + str(i))
@@ -140,19 +147,19 @@ class Neural_Network(object):
                          DcDw[layerNum-1][i][k] += DcDa[k] * DzDw_weight #step 5
                      else:
                          #print('DcDw +: ' + str(DaDz[k] * DcDa[k] * DzDw_weight))
-                         #print('DcDw AGAIN +: '  + str(sigmoid_prime(self.layers_unsquashed[layerNum][k]) * DcDa[k] * DzDw_weight))
+                         #print('DcDw AGAIN +: '  + str(sigmoid_prime(self.layers[layerNum][k]) * DcDa[k] * DzDw_weight))
                          DcDw[layerNum-1][i][k] += DaDz[k] * DcDa[k] * DzDw_weight #step 5
                          #DcDw[layerNum-1][i][k] += sigmoid_prime(self.layers_unsquashed[layerNum][k]) * DcDa[k] * DzDw_weight #step 5
-
             for i in range(lenLayer):
-                if self.regression_problem is True and final_layer is True:
-                    DcDb[layerNum][i] += DcDa[i] #step 6. Note that DcDb is a 2D array
-                else:
-                    DcDb[layerNum][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
+                 if self.regression_problem is True and final_layer is True:
+                     DcDb[layerNum][i] += DcDa[i] #step 6. Note that DcDb is a 2D array
+                 else:
+                     DcDb[layerNum][i] += DaDz[i] * DcDa[i] #step 6. Note that DcDb is a 2D array
+
 
             #calculate DcDa for previous layer
             DcDa_prev_layer = [0] * lenLayerPrev
-            #print('DcDa old: ' + str(DcDa) + '***************************************')
+            ##print('DcDa old: ' + str(DcDa) + '***************************************')
             for i in range(lenLayer):
                 DcDa_old = DcDa[i] #current layer
                 for j in range(lenLayerPrev):
@@ -207,6 +214,7 @@ class Neural_Network(object):
     def train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
         counter = 0
         for iteration in range(epochs):
+            print("Epoch:", iteration)
             #list of lists, one for each layer. We will maintain a running average
             batches = self.randomize_batches(training_samples, num_batches, batch_min_len)
 
@@ -217,45 +225,40 @@ class Neural_Network(object):
 
                 '''
                 #batches debugging statement
-                print('batches: ')
-                print(batches)
-                print()
+                #print('batches: ')
+                #print(batches)
+                #print()
                 '''
-                '''
+
                 #debugging statements
-                print('DcDw initial: ')
-                print(DcDw)
-                print()
-                print('DcDb initial: ')
-                print(DcDb)
-                print()
-                '''
+                #print('DcDw initial: ')
+                #print(DcDw)
+                #print()
+                #print('DcDb initial: ')
+                #print(DcDb)
+                #print()
 
                 for sample in batch:
                     #run forward and back propogation for each sample in batch
                     inputs = sample[0]
                     expected = sample[1]
                     #print('input!!!!: ' + str(inputs))
-                    print('forward prop returns: ' + str(self.forward_propogate(inputs)))
+                    self.forward_propogate(inputs)
                     self.back_propagate(inputs, expected, DcDw, DcDb)
-
                 counter += 1
-                '''
-                print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                '''
+                #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+                #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+                #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
                 #average results to get DcDb and DcDw
                 batch_size = len(batch)
 
-                '''
-                print('DcDw before averaging. batch_size = ' + str(batch_size))
-                print(DcDw)
-                print()
-                print('DcDb before averaging:')
-                print(DcDb)
-                print()
-                '''
+                #print('DcDw before averaging. batch_size = ' + str(batch_size))
+                #print(DcDw)
+                #print()
+                #print('DcDb before averaging:')
+                #print(DcDb)
+                #print()
+
 
                 '''
                 for i in range(len(DcDw)):
@@ -274,28 +277,25 @@ class Neural_Network(object):
                     for j in range(len(DcDb[i])):
                         DcDb[i][j] = DcDb[i][j] / batch_size
 
-                '''
-                print('DcDw after averaging. batch_size = ' + str(batch_size))
-                print(DcDw)
-                print()
-                print('DcDb after averaging:')
-                print(DcDb)
-                print()
-                '''
+                #print('DcDw after averaging. batch_size = ' + str(batch_size))
+                #print(DcDw)
+                #print()
+                #print('DcDb after averaging:')
+                #print(DcDb)
+                #print()
 
                 '''
                 apply learning rule. Use activation of neuron in higher layer as expected.
                 for biases, activation not taken into account. Can use different learning rate,
                 should be lower.
                 '''
-                '''
-                print('Weights before learning rule.')
-                print(self.weights)
-                print()
-                print('biases before learning rule:')
-                print(self.biases)
-                print()
-                '''
+
+                #print('Weights before learning rule.')
+                #print(self.weights)
+                #print()
+                #print('biases before learning rule:')
+                #print(self.biases)
+                #print()
 
                 for layer_w_num in range(len(self.weights)):
                     for i in range(0, len(self.weights[layer_w_num])):
@@ -306,19 +306,18 @@ class Neural_Network(object):
                 for layer in range(len(self.biases)):
                     for neuron in range(len(self.biases[layer])):
                         self.biases[layer][neuron] += DcDb[layer][neuron] * learning_rate_b
+#                        if layer == len(self.biases) - 1:
+#                            print(neuron, DcDb[layer][neuron])
 
-                '''
-                print('Weights after learning rule.')
-                print(self.weights)
-                print()
-                print('biases after learning rule:')
-                print(self.biases)
-                print()
+                #print('Weights after learning rule.')
+                #print(self.weights)
+                #print()
+                #print('biases after learning rule:')
+                #print(self.biases)
+                #print()
 
-                if counter is 13:
-                    exit()
-                '''
-
+                #if counter is 1:
+                #    exit()
 
 def main():
     '''
@@ -330,16 +329,16 @@ def main():
     expected = np.asarray([0,1,0,0,0,0])
 
     #print weights matricies
-    print('Weights:')
+    #print('Weights:')
     for weights_matrix in network.weights:
-        print(weights_matrix)
-    print()
+        #print(weights_matrix)
+    #print()
 
-    print('Biases:')
+    #print('Biases:')
     #print bias list for each layer
     for bias_list in network.biases:
-        print(bias_list)
-    print()
+        #print(bias_list)
+    #print()
 
     #debugging code for sigmoidal squishification
     #print(sigmoid(2, 4, .5))
@@ -348,21 +347,25 @@ def main():
     #x = network.forward_propogate([0, .5, 1])
     network.forward_propogate(inputList)
 
-    print('Layers:')
+    #print('Layers:')
     for layer in network.layers:
-        print(layer)
+        #print(layer)
 
     #print("Output:")
     #print(x)
-    print()
+    #print()
 
-    print('******************************************************************************************************************')
+    #print('******************************************************************************************************************')
     '''
+    plt.plot([1, 2, 3, 4], [1, 4, 9, 16])
+    plt.show()
+
     training_samples = []
     for x in range(0, 1000):
-        training_samples.append(([x/1000], [math.sin(x/1000)]))
+#        training_samples.append(([x/100], [math.sin(x/100)]))
+        training_samples.append(([x / 100], [math.sin(x / 100)]))
 
-    network = Neural_Network([1, 40, 24, 1], True)
+    network = Neural_Network([1, 5, 1], True)
 
     #print weights matricies
     print('Weights before training:')
@@ -377,7 +380,7 @@ def main():
     print()
 
     #train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
-    network.train(training_samples, .1, .1, 10, 100, 50)
+    network.train(training_samples, .1, .1, 10, 100, 1000)
 
     #print weights matricies
     print('Weights after training:')
@@ -393,11 +396,24 @@ def main():
 
     '''debugging code for sigmoidal squishification'''
     #print(sigmoid(2, 4, .5))
+    x_values = []
+    y_values = []
 
-    network.forward_propogate([1])
+    for value in range(-160, 160, 1):
+        x_values.append(value/10)
+        y_values.append(network.forward_propogate([value/10]))
 
+    plt.plot(x_values, y_values)
+    #plt.axis([-16, 16, 0, 10])
+    plt.show()
+
+    '''
+    network.forward_propogate([value])
     print('Layers:')
     for layer in network.layers:
         print(layer)
+    '''
+
+
 
 main()
