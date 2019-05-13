@@ -6,13 +6,12 @@ import matplotlib.pyplot as plt
 class ParameterError(Exception):
     pass
 
-'''
-def sigmoid(x, lam, beta):
+def sigmoid_switch(x, lam, beta):
     return 1.0/(1+ np.exp(-1 * lam * (x - beta)))
 
-def sigmoid_prime(input, lam, beta):
+def sigmoid_switch_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
-'''
+
 def sigmoid(s):
     # activation function
     return 1/(1+np.exp(-s))
@@ -30,14 +29,17 @@ def cost_prime(true, predicted):
 
 '''Class to created neural network with one hidden layer'''
 class Neural_Network(object):
-    def __init__(self, layer_sizes, regression):
+    def __init__(self, layer_sizes, regression, switches, lam, beta):
         self.weights = []
         self.biases = []
         self.layers = []
         self.layers_unsquashed = []
+        self.switches = switches
         self.num_layers = len(layer_sizes)
         self.input_size = layer_sizes[0]
         self.regression_problem = regression
+        self.lam = lam
+        self.beta = beta
         last_size = layer_sizes[0]
 
         #generate weight matricies with random values from normal distribution
@@ -53,7 +55,7 @@ class Neural_Network(object):
                 layer_biases.append(b)
             self.biases.append(layer_biases)
 
-
+    '''
     def forward_propogate(self, input):
         if len(input) is not self.input_size:
             raise ParameterError('input does not match input size')
@@ -84,7 +86,7 @@ class Neural_Network(object):
             #apply sigmoidal squishification
             self.layers.append([])
             #self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
-            '''with new sigmoid function'''
+            #with new sigmoid function
             if self.regression_problem is True and i is self.num_layers - 1:
                 self.layers[i] = self.layers_unsquashed[i]
             else:
@@ -94,6 +96,68 @@ class Neural_Network(object):
 
 
         return self.layers[len(self.layers) - 1]
+    '''
+
+    def forward_propogate(self, input, with_switches):
+        if len(input) is not self.input_size:
+            raise ParameterError('input does not match input size')
+
+        self.layers = []
+        self.layers_unsquashed = []
+
+        for num_neurons in self.biases:
+            self.layers.append([0] * len(num_neurons))
+            self.layers_unsquashed.append([0] * len(num_neurons))
+
+        self.layers[0] = input
+        self.layers_unsquashed[0] = input
+
+        if with_switches is True:
+            for i in range(len(self.switches)):
+                activation_old = self.switches[i][0]
+                self_excitatory_weight = self.switches[i][1]
+                self.switches[i][0] = sigmoid_switch(activation_old * self_excitatory_weight, self.lam, self.beta)
+                activation = self.switches[i][0]
+                for c in self.switches[i][2]:
+                    layer = c[0]
+                    neuron_index = c[1]
+                    weight = c[2]
+                    unsquashed = activation * weight
+                    print('activation value:' + str(activation))
+                    self.layers_unsquashed[layer][neuron_index] += unsquashed
+                print('Unsquased Layers:')
+                print(self.layers_unsquashed)
+                print()
+
+        last_layer = input
+
+        #should I maintain values before applying sigmoidal squishification?
+        #Yes. This is necessary to compute dz/da
+        for i in range(1, self.num_layers):
+            #matrix multiplication
+            product = np.dot(last_layer, self.weights[i - 1])
+            for j in range(len(self.layers_unsquashed[i])):
+                self.layers_unsquashed[i][j] += product[j]
+
+            #add biases
+            for j in range(len(self.layers_unsquashed[i])):
+                self.layers_unsquashed[i][j] = self.layers_unsquashed[i][j] + self.biases[i][j]
+
+            #apply sigmoidal squishification
+            #self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
+            '''with new sigmoid function'''
+            if self.regression_problem is True and i is self.num_layers - 1:
+                for j in range(len(self.layers[i])):
+                    self.layers[i][j] += self.layers_unsquashed[i][j]
+            else:
+                for j in range(len(self.layers[i])):
+                    self.layers[i][j] += sigmoid(self.layers_unsquashed[i][j])
+
+            last_layer = self.layers[i]
+
+
+        return self.layers[len(self.layers) - 1]
+
     '''
     Steps for backpropagation
     Divide the training examples into batches
@@ -243,7 +307,7 @@ class Neural_Network(object):
                     inputs = sample[0]
                     expected = sample[1]
                     #print('input!!!!: ' + str(inputs))
-                    self.forward_propogate(inputs)
+                    self.forward_propogate(inputs, False)
                     self.back_propagate(inputs, expected, DcDw, DcDb)
                 counter += 1
                 #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
@@ -323,37 +387,39 @@ def main():
     '''
     #debugging code for Neural_Network constructor
     #network = Neural_Network([3, 5, 1])
-    network = Neural_Network([6,6,6])
+    switch1 = [0, 2, [(0,0,1)]] #activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to
+    switches = [switch1]
+    network = Neural_Network([3,2,1], True, [], 4, .5)
 
-    inputList = np.asarray([1,3,7,2,14,9]) #answer is mod 5 the sum of the input
-    expected = np.asarray([0,1,0,0,0,0])
+    #inputList = np.asarray([1,3,7,2,14,9]) #answer is mod 5 the sum of the input
+    #expected = np.asarray([0,1,0,0,0,0])
 
     #print weights matricies
-    #print('Weights:')
+    print('Weights:')
     for weights_matrix in network.weights:
-        #print(weights_matrix)
-    #print()
+        print(weights_matrix)
+    print()
 
-    #print('Biases:')
+    print('Biases:')
     #print bias list for each layer
     for bias_list in network.biases:
-        #print(bias_list)
-    #print()
+        print(bias_list)
+    print()
 
     #debugging code for sigmoidal squishification
     #print(sigmoid(2, 4, .5))
 
     #debugging code for forward propogation
-    #x = network.forward_propogate([0, .5, 1])
-    network.forward_propogate(inputList)
+    x = network.forward_propogate([0, .5, 1])
+    #network.forward_propogate(inputList)
 
-    #print('Layers:')
+    print('Layers:')
     for layer in network.layers:
-        #print(layer)
+        print(layer)
 
-    #print("Output:")
-    #print(x)
-    #print()
+    print("Output:")
+    print(x)
+    print()
 
     #print('******************************************************************************************************************')
     '''
@@ -365,7 +431,9 @@ def main():
 #        training_samples.append(([x/100], [math.sin(x/100)]))
         training_samples.append(([x / 100], [math.sin(x / 100)]))
 
-    network = Neural_Network([1, 5, 1], True)
+    switch1 = [0, 2, [(0,0,3)]] #activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to
+    switches = [switch1]
+    network = Neural_Network([1, 5, 1], True, switches, 4, .5)
 
     #print weights matricies
     print('Weights before training:')
@@ -394,26 +462,23 @@ def main():
         print(bias_list)
     print()
 
-    '''debugging code for sigmoidal squishification'''
+    #debugging code for sigmoidal squishification
     #print(sigmoid(2, 4, .5))
     x_values = []
     y_values = []
 
     for value in range(-160, 160, 1):
         x_values.append(value/10)
-        y_values.append(network.forward_propogate([value/10]))
+        y_values.append(network.forward_propogate([value/10], True))
 
     plt.plot(x_values, y_values)
     #plt.axis([-16, 16, 0, 10])
     plt.show()
 
-    '''
-    network.forward_propogate([value])
+
+    network.forward_propogate([value], True)
     print('Layers:')
     for layer in network.layers:
         print(layer)
-    '''
-
-
 
 main()
