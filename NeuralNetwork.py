@@ -5,13 +5,12 @@ import math
 class ParameterError(Exception):
     pass
 
-'''
-def sigmoid(x, lam, beta):
+def sigmoid_switch(x, lam, beta):
     return 1.0/(1+ np.exp(-1 * lam * (x - beta)))
 
-def sigmoid_prime(input, lam, beta):
+def sigmoid_switch_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
-'''
+
 def sigmoid(s):
     # activation function
     return 1/(1+np.exp(-s))
@@ -29,14 +28,17 @@ def cost_prime(true, predicted):
 
 '''Class to created neural network with one hidden layer'''
 class Neural_Network(object):
-    def __init__(self, layer_sizes, regression):
+    def __init__(self, layer_sizes, regression, switches, lam, beta):
         self.weights = []
         self.biases = []
         self.layers = []
         self.layers_unsquashed = []
+        self.switches = switches
         self.num_layers = len(layer_sizes)
         self.input_size = layer_sizes[0]
         self.regression_problem = regression
+        self.lam = lam
+        self.beta = beta
         last_size = layer_sizes[0]
 
         #generate weight matricies with random values from normal distribution
@@ -56,32 +58,47 @@ class Neural_Network(object):
     def forward_propogate(self, input):
         if len(input) is not self.input_size:
             raise ParameterError('input does not match input size')
-
-        self.layers = []
-        self.layers_unsquashed = []
-
-        self.layers.append(input)
-        self.layers_unsquashed.append(input)
+        
+        for num_neurons in self.biases:
+            self.layers.append([0] * len(num_neurons))
+            self.layers_unsquashed.append([0] * len(num_neurons))
+            
+        self.layers[0] = input
+        self.layers_unsquashed[0] = input
         last_layer = input
-
+            
+        for i in range(len(self.switches)):
+            activation = self.switches[i][0]
+            self.switches[i][0] = sigmoid_switch(activation * self.switches[i][0], self.lam, self.beta)
+            for c in self.switches[i][2]:
+                layer = c[0]
+                neuron_index = c[1]
+                weight = c[2]
+                unsquashed = self.layers[layer][neuron_index] * weight
+                self.layers[layer][neuron_index] = sigmoid(unsquashed)
+            
         #should I maintain values before applying sigmoidal squishification?
         #Yes. This is necessary to compute dz/da
         for i in range(1, self.num_layers):
             #matrix multiplication
-            self.layers_unsquashed.append(np.dot(last_layer, self.weights[i - 1]))
-
+            
+            product = np.dot(last_layer, self.weights[i - 1])
+            for j in range(len(self.layers_unsquashed)):
+                self.layers_unsquashed[i][j] += product[j]
+            
             #add biases
             for j in range(len(self.layers_unsquashed[i])):
                 self.layers_unsquashed[i][j] = self.layers_unsquashed[i][j] + self.biases[i][j]
 
             #apply sigmoidal squishification
-            self.layers.append([])
             #self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
             '''with new sigmoid function'''
             if self.regression_problem is True and i is self.num_layers - 1:
-                self.layers[i] = self.layers_unsquashed[i]
+                for j in range(len(self.layers[i])):    
+                    self.layers[i][j] += self.layers_unsquashed[i][j]
             else:
-                self.layers[i] = [sigmoid(z) for z in self.layers_unsquashed[i]]
+                for j in range(len(self.layers[i])):
+                    self.layers[i][j] += sigmoid(self.layers_unsquashed[i][j])
 
             last_layer = self.layers[i]
 
@@ -361,9 +378,11 @@ def main():
     training_samples = []
     for x in range(0, 1000):
         training_samples.append(([x/1000], [math.sin(x/1000)]))
-
-    network = Neural_Network([1, 40, 24, 1], True)
-
+        
+    switch1 = [0, 2, [(0,0,1)]] #activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to
+    switches = [switch1]
+    network = Neural_Network([1, 40, 24, 1], True, switches, 3, 1)
+    
     #print weights matricies
     print('Weights before training:')
     for weights_matrix in network.weights:
