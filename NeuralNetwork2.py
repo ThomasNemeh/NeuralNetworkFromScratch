@@ -7,17 +7,16 @@ class ParameterError(Exception):
     pass
 
 '''
-sigmoidal function for switch neurons
+Sigmoidal function for switch neurons
 '''
 def sigmoid_switch(x, lam, beta):
     return 1.0/(1+ np.exp(-1 * lam * (x - beta)))
 
 '''
-derivative of sigmoidal function for switch neurons
+Derivative of sigmoidal function for switch neurons
 '''
 def sigmoid_switch_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
-
 
 '''
 sigmoidal function for multi-layer perceptron neurons
@@ -27,25 +26,33 @@ def sigmoid(s):
     return 1/(1+np.exp(-s))
 
 '''
-derivative of sigmoidal function for multi-layer perceptron neurons
+Derivative of sigmoidal function for multi-layer perceptron neurons
 '''
 def sigmoid_prime(s):
     #derivative of sigmoid
     return s * (1 - s)
 
 '''
-cost function for backprop
+Cost function for backprop
 '''
 def cost(true, predicted):
     return .5 * (true - predicted) ** 2
 '''
-derivative cost function for backprop
+Derivative cost function for backprop
 '''
 def cost_prime(true, predicted):
     return (true - predicted)
 
-'''Class to created neural network with one hidden layer'''
+'''Class for multi-layer perceptron that includes neurons with hysteresis'''
 class Neural_Network(object):
+    '''
+    Constructor.
+    layer_sizes: list of sizes of each layer of network, including input and output layer_sizes
+    regression: boolean value. If true, the problem is a regression problem.
+    switches: of the form [activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to]
+    lam: lam parameter for sigmoid_switch
+    beta: beta parameter for sigmoid switch
+    '''
     def __init__(self, layer_sizes, regression, switches, lam, beta):
         self.weights = []
         self.biases = []
@@ -73,48 +80,10 @@ class Neural_Network(object):
             self.biases.append(layer_biases)
 
     '''
-    def forward_propogate(self, input):
-        if len(input) is not self.input_size:
-            raise ParameterError('input does not match input size')
-
-        self.layers = []
-        self.layers_unsquashed = []
-
-        self.layers.append(input)
-        self.layers_unsquashed.append(input)
-        last_layer = input
-
-        #should I maintain values before applying sigmoidal squishification?
-        #Yes. This is necessary to compute dz/da
-        for i in range(1, self.num_layers):
-            #matrix multiplication
-            self.layers_unsquashed.append(np.dot(last_layer, self.weights[i - 1]))
-#            if i == self.num_layers - 1:
-#                print("@@@@@@")
-#                print(last_layer)
-#                print(self.weights[i-1])
-#                print(self.layers_unsquashed[-1])
-#                print("%%%%%")
-
-            #add biases
-            for j in range(len(self.layers_unsquashed[i])):
-                self.layers_unsquashed[i][j] = self.layers_unsquashed[i][j] + self.biases[i][j]
-
-            #apply sigmoidal squishification
-            self.layers.append([])
-            #self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
-            #with new sigmoid function
-            if self.regression_problem is True and i is self.num_layers - 1:
-                self.layers[i] = self.layers_unsquashed[i]
-            else:
-                self.layers[i] = [sigmoid(z) for z in self.layers_unsquashed[i]]
-
-            last_layer = self.layers[i]
-
-
-        return self.layers[len(self.layers) - 1]
+    Forward propogates given an input list.
+    input size must match the size of input layers
+    with_switches: boolean value switch indicates if switches have an effect. Switches are not used furing training
     '''
-
     def forward_propogate(self, input, with_switches):
         if len(input) is not self.input_size:
             raise ParameterError('input does not match input size')
@@ -122,6 +91,7 @@ class Neural_Network(object):
         self.layers = []
         self.layers_unsquashed = []
 
+        #set self.layers and self.layer_unsquashed to all 0's
         for num_neurons in self.biases:
             self.layers.append([0] * len(num_neurons))
             self.layers_unsquashed.append([0] * len(num_neurons))
@@ -129,6 +99,7 @@ class Neural_Network(object):
         self.layers[0] = input
         self.layers_unsquashed[0] = input
 
+        #update switches and add their effect to activations of neurons in the multi-layer perceptron
         if with_switches is True:
             for i in range(len(self.switches)):
                 activation_old = self.switches[i][0]
@@ -148,8 +119,7 @@ class Neural_Network(object):
 
         last_layer = input
 
-        #should I maintain values before applying sigmoidal squishification?
-        #Yes. This is necessary to compute dz/da
+        #forward propogate multi-layer perceptron
         for i in range(1, self.num_layers):
             #matrix multiplication
             product = np.dot(last_layer, self.weights[i - 1])
@@ -161,8 +131,6 @@ class Neural_Network(object):
                 self.layers_unsquashed[i][j] = self.layers_unsquashed[i][j] + self.biases[i][j]
 
             #apply sigmoidal squishification
-            #self.layers[i] = [sigmoid(z, 4, .5) for z in self.layers_unsquashed[i]]
-            '''with new sigmoid function'''
             if self.regression_problem is True and i is self.num_layers - 1:
                 for j in range(len(self.layers[i])):
                     self.layers[i][j] += self.layers_unsquashed[i][j]
@@ -198,39 +166,30 @@ class Neural_Network(object):
         lastLayer = self.layers[self.num_layers-1]
         for i in range(len(lastLayer)): #step 2
             DcDa.append(cost_prime(expected[i], lastLayer[i]))
-            #print(expected[i], lastLayer[i], DcDa)
-            #print('True!!!!!!: ' + str(lastLayer[i]))
-            #print('Expected!!:' + str(expected[i]))
 
         final_layer = True
-        #print('New Sample!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        #print('New Sample******************')
         #print('Weights:' + str(self.weights))
-        #should there be a 1 at the end
         for layerNum in range(self.num_layers - 1, 0, -1):
             #print("layerNum: " + str(layerNum))
             lenLayer = len(self.layers[layerNum])
             lenLayerPrev = len(self.layers[layerNum - 1])
             DaDz = []
-            #i is each neuron in current layer!!!!!
+
+            #calculate Da/Dz for current layer
             for i in range(lenLayer): #step 3
-                 #print("i: " + str(i))
-                 #DaDz.append(sigmoid_prime(self.layers_unsquashed[layerNum][i],4,0.5))
-                 '''with new sigmoid function'''
-                 '''Change HERE!'''
                  DaDz.append(sigmoid_prime(self.layers[layerNum][i]))
+
+            #calculate Dc/Dw for weights going into current layer
             for i in range(lenLayerPrev):
-                 #print("i: " + str(i))
                  for k in range(len(self.weights[layerNum-1][i])):
-                     #print("k: " + str(k))
                      DzDw_weight = self.layers[layerNum-1][i] #step 4
                      if self.regression_problem is True and final_layer is True:
-                         #print('DcDw +: '  + str(DcDa[k] * DzDw_weight))
                          DcDw[layerNum-1][i][k] += DcDa[k] * DzDw_weight #step 5
                      else:
-                         #print('DcDw +: ' + str(DaDz[k] * DcDa[k] * DzDw_weight))
-                         #print('DcDw AGAIN +: '  + str(sigmoid_prime(self.layers[layerNum][k]) * DcDa[k] * DzDw_weight))
                          DcDw[layerNum-1][i][k] += DaDz[k] * DcDa[k] * DzDw_weight #step 5
-                         #DcDw[layerNum-1][i][k] += sigmoid_prime(self.layers_unsquashed[layerNum][k]) * DcDa[k] * DzDw_weight #step 5
+
+            #calculate Dc/Db for current layer
             for i in range(lenLayer):
                  if self.regression_problem is True and final_layer is True:
                      DcDb[layerNum][i] += DcDa[i] #step 6. Note that DcDb is a 2D array
@@ -240,7 +199,7 @@ class Neural_Network(object):
 
             #calculate DcDa for previous layer
             DcDa_prev_layer = [0] * lenLayerPrev
-            ##print('DcDa old: ' + str(DcDa) + '***************************************')
+
             for i in range(lenLayer):
                 DcDa_old = DcDa[i] #current layer
                 for j in range(lenLayerPrev):
@@ -249,14 +208,9 @@ class Neural_Network(object):
                         DcDa_prev_layer[j] += DcDa_old * DzDa_neuron_prev
                     else:
                         DcDa_prev_layer[j] += DcDa_old * DaDz[i] * DzDa_neuron_prev
-            #print('Layer num old: ' + str(layerNum))
-            #print('DcDa old: ' + str(DcDa))
+
             DcDa = DcDa_prev_layer
-            #print()
-            #print('Layer num new: ' + str(layerNum - 1))
-            #print('DcDa new: ' + str(DcDa))
-            #print()
-            '''Is this right?????'''
+
             final_layer = False
 
     '''
@@ -274,6 +228,9 @@ class Neural_Network(object):
                 DcDw[layer_num].append([0] * len(self.weights[layer_num][neuron]))
                 #DcDw[layer_num][neuron].append(9)
 
+    '''
+    creates set of random batches from training data
+    '''
     def randomize_batches(self, training_samples, num_batches, batch_min_len):
         #divide training samples into batches
         batch_len = int(len(training_samples) / num_batches)
@@ -288,9 +245,8 @@ class Neural_Network(object):
         return batches
 
     '''
-    epoch: number of times entire data set is passed through neural net
-    The number of batches is equal to the number of iterations for one epoch
-    Batches are not randomized after each epoch?
+    For each batch, runs backprop algorithm for each sample in batch, then updates values accordingly.
+    This process repeats for the given number of epochs
     '''
     def train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
         counter = 0
@@ -304,50 +260,17 @@ class Neural_Network(object):
                 DcDb = []
                 self.zeroify(DcDw, DcDb)
 
-                '''
-                #batches debugging statement
-                #print('batches: ')
-                #print(batches)
-                #print()
-                '''
-
-                #debugging statements
-                #print('DcDw initial: ')
-                #print(DcDw)
-                #print()
-                #print('DcDb initial: ')
-                #print(DcDb)
-                #print()
-
                 for sample in batch:
                     #run forward and back propogation for each sample in batch
                     inputs = sample[0]
                     expected = sample[1]
-                    #print('input!!!!: ' + str(inputs))
+
                     self.forward_propogate(inputs, False)
                     self.back_propagate(inputs, expected, DcDw, DcDb)
                 counter += 1
-                #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                #print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+
                 #average results to get DcDb and DcDw
                 batch_size = len(batch)
-
-                #print('DcDw before averaging. batch_size = ' + str(batch_size))
-                #print(DcDw)
-                #print()
-                #print('DcDb before averaging:')
-                #print(DcDb)
-                #print()
-
-
-                '''
-                for i in range(len(DcDw)):
-                    for j in range(len(DcDw[i])):
-                        DcDw[i][j] = map(lambda x: x / batch_size, DcDw[i][j])
-                for i in range(len(DcDb)):
-                    DcDb[i] = map(lambda x: x / batch_size, DcDb[i])
-                '''
 
                 for i in range(len(DcDw)):
                     for j in range(len(DcDw[i])):
@@ -358,47 +281,19 @@ class Neural_Network(object):
                     for j in range(len(DcDb[i])):
                         DcDb[i][j] = DcDb[i][j] / batch_size
 
-                #print('DcDw after averaging. batch_size = ' + str(batch_size))
-                #print(DcDw)
-                #print()
-                #print('DcDb after averaging:')
-                #print(DcDb)
-                #print()
-
-                '''
-                apply learning rule. Use activation of neuron in higher layer as expected.
-                for biases, activation not taken into account. Can use different learning rate,
-                should be lower.
-                '''
-
-                #print('Weights before learning rule.')
-                #print(self.weights)
-                #print()
-                #print('biases before learning rule:')
-                #print(self.biases)
-                #print()
-
+                #apply learning rule for weights
                 for layer_w_num in range(len(self.weights)):
                     for i in range(0, len(self.weights[layer_w_num])):
                         for j in range(0, len(self.weights[layer_w_num][i])):
-                            #self.weights[layer_num][i][j] -= DcDw[layer_num][i][j] * learning_rate_w * self.layers[layer_num][j]
                             self.weights[layer_w_num][i][j] += DcDw[layer_w_num][i][j] * learning_rate_w
 
+                #apply learning rule for biases
                 for layer in range(len(self.biases)):
                     for neuron in range(len(self.biases[layer])):
                         self.biases[layer][neuron] += DcDb[layer][neuron] * learning_rate_b
 #                        if layer == len(self.biases) - 1:
 #                            print(neuron, DcDb[layer][neuron])
 
-                #print('Weights after learning rule.')
-                #print(self.weights)
-                #print()
-                #print('biases after learning rule:')
-                #print(self.biases)
-                #print()
-
-                #if counter is 1:
-                #    exit()
 
 def main():
     '''
@@ -440,17 +335,14 @@ def main():
 
     #print('******************************************************************************************************************')
     '''
-    plt.plot([1, 2, 3, 4], [1, 4, 9, 16])
-    plt.show()
 
     training_samples = []
     for x in range(0, 1000):
-#        training_samples.append(([x/100], [math.sin(x/100)]))
-        training_samples.append(([x / 100], [math.sin(x / 100)]))
+        training_samples.append(([x / 100], [math.cos(x / 100)]))
 
-    switch1 = [0, 2, [(2,0,3)]] #activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to
+    switch1 = [0, 2, [(0,0,3)]] #[activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to]
     switches = [switch1]
-    network = Neural_Network([1, 5, 1], True, switches, 4, .5)
+    network = Neural_Network([1, 5, 1], True, [], 4, .5)
 
     #print weights matricies
     print('Weights before training:')
@@ -483,17 +375,22 @@ def main():
     #print(sigmoid(2, 4, .5))
     x_values = []
     y_values = []
+    x_values_sin = []
+    y_values_sin = []
 
-    for value in range(-160, 160, 1):
+    for value in range(-300, 300, 1):
         x_values.append(value/10)
-        y_values.append(network.forward_propogate([value/10], True))
+        y_values.append(network.forward_propogate([value/10], False))
+        x_values_sin.append(value/10)
+        y_values_sin.append(math.cos(value/10))
 
     plt.plot(x_values, y_values)
+    plt.plot(x_values_sin, y_values_sin)
     #plt.axis([-16, 16, 0, 10])
     plt.show()
 
 
-    network.forward_propogate([value], True)
+    network.forward_propogate([value], False)
     print('Layers:')
     for layer in network.layers:
         print(layer)
