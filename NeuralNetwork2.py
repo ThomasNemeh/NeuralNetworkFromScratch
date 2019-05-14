@@ -6,24 +6,41 @@ import matplotlib.pyplot as plt
 class ParameterError(Exception):
     pass
 
+'''
+sigmoidal function for switch neurons
+'''
 def sigmoid_switch(x, lam, beta):
     return 1.0/(1+ np.exp(-1 * lam * (x - beta)))
 
+'''
+derivative of sigmoidal function for switch neurons
+'''
 def sigmoid_switch_prime(input, lam, beta):
     return (lam*np.exp(-lam*(input-beta))) / (np.exp(-lam*(input-beta)) + 1) ** 2
 
+
+'''
+sigmoidal function for multi-layer perceptron neurons
+'''
 def sigmoid(s):
     # activation function
     return 1/(1+np.exp(-s))
 
+'''
+derivative of sigmoidal function for multi-layer perceptron neurons
+'''
 def sigmoid_prime(s):
     #derivative of sigmoid
     return s * (1 - s)
 
-#does ordering of actual and expected matter?
+'''
+cost function for backprop
+'''
 def cost(true, predicted):
     return .5 * (true - predicted) ** 2
-
+'''
+derivative cost function for backprop
+'''
 def cost_prime(true, predicted):
     return (true - predicted)
 
@@ -431,7 +448,7 @@ def main():
 #        training_samples.append(([x/100], [math.sin(x/100)]))
         training_samples.append(([x / 100], [math.sin(x / 100)]))
 
-    switch1 = [0, 2, [(0,0,3)]] #activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to
+    switch1 = [0, 2, [(2,0,3)]] #activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to
     switches = [switch1]
     network = Neural_Network([1, 5, 1], True, switches, 4, .5)
 
