@@ -24,7 +24,6 @@ sigmoidal function for multi-layer perceptron neurons
 def sigmoid(s):
     # activation function
     return 1/(1+np.exp(-s))
-
 '''
 Derivative of sigmoidal function for multi-layer perceptron neurons
 '''
@@ -41,7 +40,7 @@ def cost(true, predicted):
 Derivative cost function for backprop
 '''
 def cost_prime(true, predicted):
-    return (true - predicted)
+    return -1 * (true - predicted)
 
 '''Class for multi-layer perceptron that includes neurons with hysteresis'''
 class Neural_Network(object):
@@ -285,12 +284,12 @@ class Neural_Network(object):
                 for layer_w_num in range(len(self.weights)):
                     for i in range(0, len(self.weights[layer_w_num])):
                         for j in range(0, len(self.weights[layer_w_num][i])):
-                            self.weights[layer_w_num][i][j] += DcDw[layer_w_num][i][j] * learning_rate_w
+                            self.weights[layer_w_num][i][j] -= DcDw[layer_w_num][i][j] * learning_rate_w
 
                 #apply learning rule for biases
                 for layer in range(len(self.biases)):
                     for neuron in range(len(self.biases[layer])):
-                        self.biases[layer][neuron] += DcDb[layer][neuron] * learning_rate_b
+                        self.biases[layer][neuron] -= DcDb[layer][neuron] * learning_rate_b
 #                        if layer == len(self.biases) - 1:
 #                            print(neuron, DcDb[layer][neuron])
 
@@ -337,12 +336,12 @@ def main():
     '''
 
     training_samples = []
-    for x in range(0, 1000):
-        training_samples.append(([x / 100], [math.cos(x / 100)]))
+    for x in range(-1000, 1000):
+        training_samples.append(([x / 100], [sigmoid_switch(x/100,4,0.5)]))
 
     switch1 = [0, 2, [(0,0,3)]] #[activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to]
     switches = [switch1]
-    network = Neural_Network([1, 5, 1], True, [], 4, .5)
+    network = Neural_Network([1, 5, 1], True, [], 4, .5) #[layers of neurons], regression, [switches], lambda, beta
 
     #print weights matricies
     print('Weights before training:')
@@ -357,7 +356,7 @@ def main():
     print()
 
     #train(self, training_samples, learning_rate_w, learning_rate_b, num_batches, batch_min_len, epochs):
-    network.train(training_samples, .1, .1, 10, 100, 1000)
+    network.train(training_samples, .1, .1, 10, 100, 100)
 
     #print weights matricies
     print('Weights after training:')
@@ -373,20 +372,20 @@ def main():
 
     #debugging code for sigmoidal squishification
     #print(sigmoid(2, 4, .5))
-    x_values = []
-    y_values = []
-    x_values_sin = []
-    y_values_sin = []
+    x_values_actual = []
+    y_values_actual = []
+    x_values_expected = []
+    y_values_expected = []
 
     for value in range(-300, 300, 1):
-        x_values.append(value/10)
-        y_values.append(network.forward_propogate([value/10], False))
-        x_values_sin.append(value/10)
-        y_values_sin.append(math.cos(value/10))
+        x_values_actual.append(value/10)
+        y_values_actual.append(network.forward_propogate([value/10], False))
+        x_values_expected.append(value/10)
+        y_values_expected.append(sigmoid_switch(value/10,4,0.5))
 
-    plt.plot(x_values, y_values)
-    plt.plot(x_values_sin, y_values_sin)
-    #plt.axis([-16, 16, 0, 10])
+    plt.plot(x_values_actual, y_values_actual)
+    plt.plot(x_values_expected, y_values_expected)
+    #plt.axis([-30, 30, 0, 7])
     plt.show()
 
 
