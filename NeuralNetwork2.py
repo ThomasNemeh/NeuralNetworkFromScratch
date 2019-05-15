@@ -291,8 +291,6 @@ class Neural_Network(object):
                 for layer in range(len(self.biases)):
                     for neuron in range(len(self.biases[layer])):
                         self.biases[layer][neuron] += DcDb[layer][neuron] * learning_rate_b
-#                        if layer == len(self.biases) - 1:
-#                            print(neuron, DcDb[layer][neuron])
 
 
 def main():
@@ -338,11 +336,11 @@ def main():
 
     training_samples = []
     for x in range(0, 1000):
-        training_samples.append(([x / 100], [math.cos(x / 100)]))
+        training_samples.append(([x / 100], [math.sin(x / 100)]))
 
-    switch1 = [0, 2, [(0,0,3)]] #[activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to]
+    switch1 = [0, 2, [(2,0,3)]] #[activation, self-excitatory weight, [(layer num, neuron num, weight)] for neurons the switch is connected to]
     switches = [switch1]
-    network = Neural_Network([1, 5, 1], True, [], 4, .5)
+    network = Neural_Network([1, 5, 1], True, switches, 4, 1)
 
     #print weights matricies
     print('Weights before training:')
@@ -380,10 +378,12 @@ def main():
 
     for value in range(-300, 300, 1):
         x_values.append(value/10)
-        y_values.append(network.forward_propogate([value/10], False))
+        y_values.append(network.forward_propogate([value/10], True))
         x_values_sin.append(value/10)
-        y_values_sin.append(math.cos(value/10))
+        y_values_sin.append(math.sin(value/10))
 
+    plt.rc('xtick', labelsize=20)
+    plt.rc('ytick', labelsize=20)
     plt.plot(x_values, y_values)
     plt.plot(x_values_sin, y_values_sin)
     #plt.axis([-16, 16, 0, 10])
